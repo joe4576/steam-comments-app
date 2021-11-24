@@ -1,29 +1,31 @@
 <template>
-  <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js + TypeScript App"/>
-  </div>
+  <v-app>
+    <v-main>
+      <v-container v-if="apiResponse">
+        <v-row v-for="(comment, index) in apiResponse" :key="index">
+          <v-col>{{ comment.authorUrl }}</v-col>
+          <v-col>{{ comment.authorComment }}</v-col>
+        </v-row>
+      </v-container>
+    </v-main>
+  </v-app>
 </template>
 
 <script lang="ts">
-import Vue from 'vue';
-import HelloWorld from './components/HelloWorld.vue';
+import { defineComponent, onMounted, ref } from "@vue/composition-api";
+import api from "@/services/api";
+import { AuthorComment } from "backend/src/types/types";
 
-export default Vue.extend({
-  name: 'App',
-  components: {
-    HelloWorld
-  }
+export default defineComponent({
+  name: "App",
+  setup() {
+    const apiResponse = ref<AuthorComment[]>();
+    onMounted(async () => {
+      apiResponse.value = await api.getCommentsForUser();
+    });
+    return {
+      apiResponse,
+    };
+  },
 });
 </script>
-
-<style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
-</style>
