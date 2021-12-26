@@ -50,7 +50,7 @@ app.get("/comments/:steamId", async (req, res) => {
   res.send(commentPairs);
 });
 
-const PORT = 8089;
+const PORT = 3080;
 
 app.listen(PORT, () => {
   console.log(`Express listening on port ${PORT}...`);
