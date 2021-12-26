@@ -1,4 +1,4 @@
-# steam-comment-app
+# steam-comments
 
 ## Project setup
 ```

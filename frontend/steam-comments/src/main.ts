@@ -1,11 +1,10 @@
 import Vue from "vue";
 import App from "./App.vue";
 import vuetify from "./plugins/vuetify";
-import VueCompositionApi from "@vue/composition-api";
+import VueCompositionAPI from "@vue/composition-api";
 
 Vue.config.productionTip = false;
-
-Vue.use(VueCompositionApi);
+Vue.use(VueCompositionAPI);
 
 new Vue({
   vuetify,
