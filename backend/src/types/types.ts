@@ -14,3 +14,12 @@ export interface AuthorComment {
   authorUrl: string;
   authorComment: string;
 }
+
+interface SteamResolveVanityUrlData {
+  steamid?: string;
+  success: number;
+  message?: string;
+}
+export interface SteamResolveVanityUrlReponse {
+  response: SteamResolveVanityUrlData;
+}
