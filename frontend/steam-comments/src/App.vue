@@ -88,8 +88,18 @@ export default defineComponent({
         return;
       }
 
+      // todo refactor to use regex
+      let filteredInput = trimmedInput.replace(
+        "https://steamcommunity.com/id/",
+        ""
+      );
+      filteredInput = filteredInput.replace(
+        "https://steamcommunity.com/profiles/",
+        ""
+      );
+
       loading.value = true;
-      comments.value = await api.getAllCommentsForUser(trimmedInput);
+      comments.value = await api.getAllCommentsForUser(filteredInput);
       loading.value = false;
     };
 
