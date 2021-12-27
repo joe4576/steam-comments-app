@@ -3,18 +3,37 @@
     <v-app-bar app color="primary" dark> Steam Comments Searcher </v-app-bar>
     <v-main>
       <v-container>
-        <v-form @submit.prevent="getComments()">
-          <v-row justify="center">
-            <v-col class="mx-auto" cols="6">
-              <v-text-field v-model="userInput" clearable autofocus />
-            </v-col>
-          </v-row>
-          <v-row justify="center">
-            <v-col class="mx-auto" cols="4">
-              <v-btn @click="getComments()" block> Get comments </v-btn>
-            </v-col>
-          </v-row>
-        </v-form>
+        <v-row>
+          <v-col>
+            <v-form @submit.prevent="getComments()">
+              <v-row justify="center">
+                <v-col class="mx-auto" cols="6">
+                  <v-text-field
+                    v-model="userInput"
+                    clearable
+                    autofocus
+                    @click:clear="clearErrorMessages()"
+                  />
+                </v-col>
+              </v-row>
+              <v-row justify="center">
+                <v-col class="mx-auto" cols="4">
+                  <v-btn @click="getComments()" block> Get comments </v-btn>
+                </v-col>
+              </v-row>
+            </v-form>
+          </v-col>
+        </v-row>
+        <v-row v-if="errorMessages">
+          <ul v-for="(error, index) in errorMessages" :key="index">
+            <li class="error-msg">{{ error }}</li>
+          </ul>
+        </v-row>
+        <v-row v-if="apiErrorMessage">
+          <ul>
+            <li class="error-msg">{{ apiErrorMessage }}</li>
+          </ul>
+        </v-row>
       </v-container>
       <v-container v-if="comments">
         <v-row>
@@ -44,27 +63,34 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from "@vue/composition-api";
+import { computed, defineComponent, ref } from "@vue/composition-api";
 import api from "@/services/api";
 import { AuthorComment } from "../../../backend/src/types/types";
+import errorStore from "./store/errorStore";
 
 export default defineComponent({
   name: "App",
   setup() {
-    const userInput = ref("");
+    const userInput = ref<string | null>(null);
     const comments = ref<AuthorComment[] | null>(null);
     const loading = ref(false);
+    const errorMessages = ref<string[]>([]);
+
+    const clearErrorMessages = () => {
+      errorMessages.value = [];
+    };
 
     const getComments = async () => {
-      loading.value = true;
-      // todo error handling in backend and service
-      try {
-        comments.value = await api.getAllCommentsForUser(userInput.value);
-      } catch (e: any) {
-        console.error(e);
-      } finally {
-        loading.value = false;
+      clearErrorMessages();
+      const trimmedInput = userInput.value?.trim() ?? "";
+      if (!trimmedInput) {
+        errorMessages.value.push("Enter a steam url or steamid64");
+        return;
       }
+
+      loading.value = true;
+      comments.value = await api.getAllCommentsForUser(trimmedInput);
+      loading.value = false;
     };
 
     return {
@@ -72,7 +98,16 @@ export default defineComponent({
       userInput,
       comments,
       loading,
+      clearErrorMessages,
+      errorMessages,
+      apiErrorMessage: computed(() => errorStore.apiErrorMessage.value),
     };
   },
 });
 </script>
+
+<style scoped>
+.error-msg {
+  color: red;
+}
+</style>

@@ -100,14 +100,16 @@ app.get("/comments/:steamId", async (req, res) => {
   const steamId64 = await getValidSteamId64(req.params.steamId);
 
   if (!steamId64) {
-    res.send("Steam account not found");
+    res.statusMessage = "Steam account not found";
+    res.sendStatus(404);
     return;
   }
 
   const comments = await getCommentsFromSteamId64(steamId64);
 
   if (!comments) {
-    res.send("No comments found");
+    res.statusMessage = "No comments found";
+    res.sendStatus(404);
     return;
   }
 
