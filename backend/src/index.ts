@@ -6,7 +6,6 @@ import {
   SteamCommentData,
   AuthorComment,
   SteamResolveVanityUrlReponse,
-  SummaryResponse,
 } from "./types/types";
 import dotenv from "dotenv";
 import { doesStringOnlyContainNumbers } from "./utils/strings";
@@ -16,8 +15,8 @@ const app = express();
 app.use(cors());
 
 /**
- * Checks if a string containers only numbers. If it does, return it as an assumed valid steamid64.
- * If it contains any numbers, it is assumed to be a vanity url. Check if that url is associated with
+ * Checks if a string contains only numbers. If it does, return it as an assumed valid steamid64.
+ * If it contains anything but numbers, it is assumed to be a vanity url. Check if that url is associated with
  * a steamid64.
  * @param input Steamid64 or vanity url
  * @returns A string in the valid steamid64 format (i.e. all numbers)
@@ -48,8 +47,8 @@ const getProfileCommentsFromSteamId64 = async (
 ): Promise<AuthorComment[] | null> => {
   // kennyS steamID64: 76561198024905796
   // my steamId: 76561198085973818
-  // limit at 5000 for now
-  const url = `https://steamcommunity.com/comment/Profile/render/${steamId64}/-1/?start=0&count=5000`;
+  // limit at 1000 for now
+  const url = `https://steamcommunity.com/comment/Profile/render/${steamId64}/-1/?start=0&count=1000`;
   const data = await fetch(url, {
     headers: {
       Origin: "https://steamcommunity.com",
@@ -63,79 +62,75 @@ const getProfileCommentsFromSteamId64 = async (
     return null;
   } else {
     const dom = new JSDOM(payload.comments_html);
-    const commentThreads = dom.window.document.querySelectorAll(
-      ".commentthread_comment_content"
+
+    const profileComments: AuthorComment[] = [];
+
+    // maps a comment id to an author comment object
+    const commentMap = new Map<string, AuthorComment>();
+
+    const commentContents = dom.window.document.querySelectorAll(
+      ".commentthread_comment"
     );
-    const commentPairs: AuthorComment[] = [];
 
-    commentThreads.forEach((c) => {
-      const authorUrl = (
-        c.querySelector(".commentthread_comment_author a") as
-          | HTMLAnchorElement
-          | undefined
-      )?.href;
+    commentContents.forEach((ct) => {
+      const commentThreads = ct.querySelectorAll(
+        ".commentthread_comment_content"
+      );
 
-      const commentText = c
-        .querySelector(".commentthread_comment_text")
-        ?.innerHTML.trim()
-        .replace(/<.*?>/g, "");
+      const commentId = ct.getAttribute("id")!.toString();
 
-      if (authorUrl && commentText) {
-        commentPairs.push({ authorUrl: authorUrl, authorComment: commentText });
+      // get text content and comment author url
+      commentThreads.forEach((c) => {
+        const authorUrl = (
+          c.querySelector(".commentthread_comment_author a") as
+            | HTMLAnchorElement
+            | undefined
+        )?.href;
+
+        const commentText = c
+          .querySelector(".commentthread_comment_text")
+          ?.innerHTML.trim()
+          .replace(/<.*?>/g, "");
+
+        const personaName = c.querySelector("bdi")?.innerHTML.trim();
+
+        if (authorUrl && commentText) {
+          commentMap.set(commentId, {
+            authorUrl: authorUrl,
+            authorComment: commentText,
+            personaName: personaName ?? "",
+            avatarSrc: "",
+          } as AuthorComment);
+        }
+      });
+
+      // get avatar src
+      const allImageElements = ct.querySelector(
+        ".commentthread_comment_avatar a > img"
+      );
+
+      const mediumImageSrc = allImageElements!
+        .getAttribute("srcset")
+        ?.split(" ")
+        .find((src) => src.includes("medium"));
+
+      const existingCommentObject = commentMap.get(commentId);
+      if (existingCommentObject) {
+        existingCommentObject.avatarSrc = mediumImageSrc ?? "";
       }
     });
 
-    // get unique author steamid64s
-    // const uniqueAuthorSteamid64s = commentPairs
-    //   .map((c) => c.authorUrl)
-    //   .filter((value, index, self) => self.indexOf(value) === index)
-    //   .map(async (url) => await getValidSteamId64(url));
+    // Add each comment to an array to be returned
+    commentMap.forEach((comment) => {
+      profileComments.push(comment);
+    });
 
-    return commentPairs;
+    return profileComments;
   }
 };
 
-/**
- * Match up steamid64s with their corresponding persona name
- * @param steamId64s List of steamid64s (max 100)
- * @returns Map of steamId64 to persona name
- */
-const getPersonaNameFromSteamId64 = async (steamId64s: string[]) => {
-  let formattedString = "[";
-  steamId64s.forEach((id, index) => {
-    formattedString += `${id}${index !== steamId64s.length - 1 ? "," : ""}`;
-  });
-  formattedString += "]";
-
-  const url = `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${process.env.STEAM_API_KEY}&format=json&steamids=${formattedString}`;
-  const res = await fetch(url);
-  const json = (await res.json()) as SummaryResponse;
-
-  const steamId64PersonaNameMap = new Map<string, string>();
-
-  json.response.players.forEach((player) => {
-    steamId64PersonaNameMap.set(player.steamid, player.personaname ?? "");
-  });
-
-  return steamId64PersonaNameMap;
-};
-
-app.get("/test", async (req, res) => {
-  // res.send(
-  //   await getPersonaNameFromSteamId64([
-  //     "76561198308003066",
-  //     "76561197984864068",
-  //   ])
-  // );
-  // await getPersonaNameFromSteamId64(["76561198308003066", "76561197984864068"]);
-  // await getPeronaNameFromUrl("https://steamcommunity.com/id/jebus123");
-  // res.send(
-  //   await getPeronaNameFromUrl("https://steamcommunity.com/id/jebus123")
-  // );
-});
-
-app.get("/comments/:steamId", async (req, res) => {
-  const steamId64 = await getValidSteamId64(req.params.steamId);
+app.get("/comments/:steamIdOrVanityUrl", async (req, res) => {
+  const steamId64 = await getValidSteamId64(req.params.steamIdOrVanityUrl);
 
   if (!steamId64) {
     res.statusMessage = "Steam account not found";

@@ -41,13 +41,28 @@
             Found <b>{{ comments.length }}</b> comments.
           </v-col>
         </v-row>
-        <v-row v-for="(comment, index) in comments" :key="index">
-          <v-col cols="6">
+        <v-row
+          v-for="(comment, index) in comments"
+          :key="index"
+          :style="{
+            'background-color': rowColor(index),
+            'overflow-y': 'scroll',
+          }"
+        >
+          <v-col cols="auto">
             <a :href="comment.authorUrl" target="_blank">
-              {{ comment.authorUrl }}
+              <img :src="comment.avatarSrc" alt="Player avatar" />
             </a>
           </v-col>
-          <v-col cols="6">{{ comment.authorComment }}</v-col>
+          <v-col cols="auto">
+            <v-row>
+              <v-col cols="12">
+                <pre>{{ comment.personaName }}</pre>
+              </v-col>
+            </v-row>
+          </v-col>
+          <v-spacer />
+          <v-col cols="7">{{ comment.authorComment }}</v-col>
         </v-row>
       </v-container>
       <v-dialog v-model="loading" hide-overlay persistent width="300">
@@ -111,6 +126,11 @@ export default defineComponent({
       clearErrorMessages,
       errorMessages,
       apiErrorMessage: computed(() => errorStore.apiErrorMessage.value),
+      rowColor: (rowIndex: number) => {
+        return rowIndex % 2 !== 0 ? "white" : "#b0ceff";
+      },
+      defaultAvatarSrc:
+        "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/avatars/48/4888d158c81bc8f1d7644321d9eb78b0048a9bda_medium.jpg",
     };
   },
 });
