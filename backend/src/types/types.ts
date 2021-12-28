@@ -13,6 +13,8 @@ export interface SteamCommentData {
 export interface AuthorComment {
   authorUrl: string;
   authorComment: string;
+  personaName: string;
+  avatarSrc: string;
 }
 
 interface SteamResolveVanityUrlData {
