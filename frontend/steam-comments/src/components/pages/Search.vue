@@ -98,7 +98,12 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, ref, watch } from "@vue/composition-api";
+import {
+  computed,
+  defineComponent,
+  onMounted,
+  ref,
+} from "@vue/composition-api";
 import api from "@/services/api";
 import { AuthorComment } from "../../../../../backend/src/types/types";
 import errorStore from "../../store/errorStore";
@@ -191,16 +196,12 @@ export default defineComponent({
       loading.value = false;
     };
 
-    watch(
-      () => route.value.query,
-      async () => {
-        if (route.value.query.account) {
-          userInput.value = route.value.query.account.toString();
-          await getComments();
-        }
-      },
-      { immediate: true }
-    );
+    onMounted(async () => {
+      if (route.value.query.account) {
+        userInput.value = route.value.query.account.toString();
+        await getComments();
+      }
+    });
 
     return {
       getComments,
