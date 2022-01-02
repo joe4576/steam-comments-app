@@ -4,24 +4,45 @@
     <v-main>
       <v-container>
         <v-row>
-          <v-col>
-            <v-form @submit.prevent="getComments()">
-              <v-row justify="center">
-                <v-col class="mx-auto" cols="6">
-                  <v-text-field
-                    v-model="userInput"
-                    clearable
-                    autofocus
-                    @click:clear="clearErrorMessages()"
-                  />
-                </v-col>
-              </v-row>
-              <v-row justify="center">
-                <v-col class="mx-auto" cols="4">
-                  <v-btn @click="getComments()" block> Get comments </v-btn>
-                </v-col>
-              </v-row>
-            </v-form>
+          <v-col cols="6">
+            <v-card>
+              <v-container>
+                <v-row class="mx-3">
+                  <v-col>
+                    <v-form @submit.prevent="getComments()">
+                      <v-row>
+                        <v-col cols="12">
+                          <v-text-field
+                            v-model="userInput"
+                            clearable
+                            autofocus
+                            @click:clear="clearErrorMessages()"
+                          />
+                        </v-col>
+                      </v-row>
+                      <v-row>
+                        <v-col cols="auto">
+                          <v-btn @click="getComments()" block>
+                            Get comments
+                          </v-btn>
+                        </v-col>
+                      </v-row>
+                    </v-form>
+                  </v-col>
+                </v-row>
+              </v-container>
+            </v-card>
+          </v-col>
+          <v-col cols="6">
+            <filter-expansion-card
+              title="Filter Results"
+              ref="filterExpansionCard"
+              @steamUrlResult="filterBySteamUrl"
+              @steamNameResult="filterBySteamName"
+              @commentResult="filterByComment"
+              @reset="reset()"
+              :disabled="!allComments"
+            />
           </v-col>
         </v-row>
         <v-row v-if="errorMessages">
@@ -35,14 +56,16 @@
           </ul>
         </v-row>
       </v-container>
-      <v-container v-if="comments">
+      <v-container v-if="allComments">
         <v-row>
           <v-col>
-            Found <b>{{ comments.length }}</b> comments.
+            Found <b>{{ numberOfCommentsFound }}</b> comments.
           </v-col>
         </v-row>
+      </v-container>
+      <v-container v-if="commentsToDisplay">
         <v-row
-          v-for="(comment, index) in comments"
+          v-for="(comment, index) in commentsToDisplay"
           :key="index"
           :style="{
             'background-color': rowColor(index),
@@ -82,14 +105,31 @@ import { computed, defineComponent, ref } from "@vue/composition-api";
 import api from "@/services/api";
 import { AuthorComment } from "../../../backend/src/types/types";
 import errorStore from "./store/errorStore";
+import FilterExpansionCard, {
+  FormInterface,
+} from "@/components/FilterExpansionCard.vue";
+import {
+  populateArrayWithValuesFromMap,
+  pushKeyToArrayMap,
+} from "@/utils/maps";
 
 export default defineComponent({
   name: "App",
+  components: {
+    FilterExpansionCard,
+  },
   setup() {
     const userInput = ref<string | null>(null);
-    const comments = ref<AuthorComment[] | null>(null);
+    const allComments = ref<AuthorComment[] | null>(null);
+    const commentsToDisplay = ref<AuthorComment[] | null>(null);
     const loading = ref(false);
     const errorMessages = ref<string[]>([]);
+
+    const urlCommentMap = new Map<string, AuthorComment[]>();
+    const nameCommentMap = new Map<string, AuthorComment[]>();
+    const commentMap = new Map<string, AuthorComment[]>();
+
+    const filterExpansionCard = ref<FormInterface | null>(null);
 
     const clearErrorMessages = () => {
       errorMessages.value = [];
@@ -97,40 +137,100 @@ export default defineComponent({
 
     const getComments = async () => {
       clearErrorMessages();
+      filterExpansionCard.value?.reset();
+      urlCommentMap.clear();
+      nameCommentMap.clear();
+      commentMap.clear();
+
       const trimmedInput = userInput.value?.trim() ?? "";
       if (!trimmedInput) {
         errorMessages.value.push("Enter a steam url or steamid64");
         return;
       }
 
-      // todo refactor to use regex
-      let filteredInput = trimmedInput.replace(
-        "https://steamcommunity.com/id/",
-        ""
-      );
-      filteredInput = filteredInput.replace(
-        "https://steamcommunity.com/profiles/",
+      /**
+       * remove:
+       * - https://steamcommunity.com/id/
+       * - https://steamcommunity.com/profiles/
+       */
+      const filteredInput = trimmedInput.replace(
+        /(https\:\/\/steamcommunity.com\/id\/|https\:\/\/steamcommunity.com\/profiles\/)/,
         ""
       );
 
       loading.value = true;
-      comments.value = await api.getAllCommentsForUser(filteredInput);
+      allComments.value = await api.getAllCommentsForUser(filteredInput);
+
+      commentsToDisplay.value = allComments.value;
+
+      if (allComments.value) {
+        allComments.value.forEach((c) => {
+          const authorUrl = c.authorUrl.toLowerCase();
+          const personaName = c.personaName.toLowerCase();
+          const commentContent = c.authorComment.toLowerCase();
+
+          // Map url, persona name and comment content to an array of
+          // comment objects they correspond to.
+          pushKeyToArrayMap<AuthorComment>(authorUrl, c, urlCommentMap);
+          pushKeyToArrayMap<AuthorComment>(personaName, c, nameCommentMap);
+          pushKeyToArrayMap<AuthorComment>(commentContent, c, commentMap);
+        });
+      }
+
       loading.value = false;
     };
 
     return {
       getComments,
       userInput,
-      comments,
+      allComments,
       loading,
       clearErrorMessages,
       errorMessages,
-      apiErrorMessage: computed(() => errorStore.apiErrorMessage.value),
+      commentsToDisplay,
+      filterExpansionCard,
+      defaultAvatarSrc:
+        "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/avatars/48/4888d158c81bc8f1d7644321d9eb78b0048a9bda_medium.jpg",
+
       rowColor: (rowIndex: number) => {
         return rowIndex % 2 !== 0 ? "white" : "#b0ceff";
       },
-      defaultAvatarSrc:
-        "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/avatars/48/4888d158c81bc8f1d7644321d9eb78b0048a9bda_medium.jpg",
+      filterBySteamUrl: (value: string) => {
+        if (allComments.value && value) {
+          const commentsByUrl = urlCommentMap.get(value) ?? [];
+          commentsToDisplay.value = commentsByUrl;
+        }
+      },
+      filterBySteamName: (value: string) => {
+        if (allComments.value && value) {
+          commentsToDisplay.value = populateArrayWithValuesFromMap(
+            value,
+            nameCommentMap
+          );
+        }
+      },
+      filterByComment: (value: string) => {
+        if (allComments.value && value) {
+          commentsToDisplay.value = populateArrayWithValuesFromMap(
+            value,
+            commentMap
+          );
+        }
+      },
+      reset: () => {
+        commentsToDisplay.value = allComments.value;
+      },
+
+      numberOfCommentsFound: computed(() => {
+        if (!commentsToDisplay.value && allComments.value) {
+          return allComments.value.length;
+        } else if (commentsToDisplay.value) {
+          return commentsToDisplay.value.length;
+        } else {
+          return -1;
+        }
+      }),
+      apiErrorMessage: computed(() => errorStore.apiErrorMessage.value),
     };
   },
 });
