@@ -189,9 +189,16 @@ export default defineComponent({
         }
       },
       filterBySteamName: (value: string) => {
-        if (allComments.value) {
-          const commentsByUrl = nameCommentMap.get(value.toLowerCase()) ?? [];
-          commentsToDisplay.value = commentsByUrl;
+        if (allComments.value && value) {
+          // Find similar keys to user input and get from map
+          commentsToDisplay.value = [...nameCommentMap.keys()]
+            .map((key) => {
+              if (key.includes(value.toLowerCase())) {
+                return key;
+              }
+            })
+            .filter((key) => !!key)
+            .flatMap((key) => nameCommentMap.get(key!) ?? []);
         }
       },
       commentsToDisplay,
