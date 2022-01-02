@@ -107,6 +107,7 @@ import errorStore from "./store/errorStore";
 import FilterExpansionCard, {
   FormInterface,
 } from "@/components/FilterExpansionCard.vue";
+import { pushKeyToArrayMap } from "@/utils/maps";
 
 export default defineComponent({
   name: "App",
@@ -159,19 +160,9 @@ export default defineComponent({
           const authorUrl = c.authorUrl.toLowerCase();
           const personaName = c.personaName.toLowerCase();
 
-          // map author url to AuthorComment array
-          if (urlCommentMap.get(authorUrl)) {
-            urlCommentMap.get(authorUrl)!.push(c);
-          } else {
-            urlCommentMap.set(authorUrl, [c]);
-          }
-
-          // map persona name to AuthorComment array
-          if (nameCommentMap.get(personaName)) {
-            nameCommentMap.get(personaName)!.push(c);
-          } else {
-            nameCommentMap.set(personaName, [c]);
-          }
+          // Map url and persona name to an array of their comments
+          pushKeyToArrayMap<AuthorComment>(authorUrl, c, urlCommentMap);
+          pushKeyToArrayMap<AuthorComment>(personaName, c, nameCommentMap);
         });
       }
 
