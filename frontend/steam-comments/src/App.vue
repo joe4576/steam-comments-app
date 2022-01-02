@@ -142,13 +142,13 @@ export default defineComponent({
         return;
       }
 
-      // todo refactor to use regex
-      let filteredInput = trimmedInput.replace(
-        "https://steamcommunity.com/id/",
-        ""
-      );
-      filteredInput = filteredInput.replace(
-        "https://steamcommunity.com/profiles/",
+      /**
+       * remove:
+       * - https://steamcommunity.com/id/
+       * - https://steamcommunity.com/profiles/
+       */
+      const filteredInput = trimmedInput.replace(
+        /(https\:\/\/steamcommunity.com\/id\/|https\:\/\/steamcommunity.com\/profiles\/)/,
         ""
       );
 
