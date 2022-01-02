@@ -16,7 +16,7 @@ const routes: RouteConfig[] = [
   {
     path: "/search",
     component: Search,
-    name: "seacrh",
+    name: "search",
   },
 ];
 
