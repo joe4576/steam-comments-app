@@ -176,12 +176,14 @@ export default defineComponent({
       loading,
       clearErrorMessages,
       errorMessages,
-      apiErrorMessage: computed(() => errorStore.apiErrorMessage.value),
+      commentsToDisplay,
+      filterExpansionCard,
+      defaultAvatarSrc:
+        "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/avatars/48/4888d158c81bc8f1d7644321d9eb78b0048a9bda_medium.jpg",
+
       rowColor: (rowIndex: number) => {
         return rowIndex % 2 !== 0 ? "white" : "#b0ceff";
       },
-      defaultAvatarSrc:
-        "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/avatars/48/4888d158c81bc8f1d7644321d9eb78b0048a9bda_medium.jpg",
       filterBySteamUrl: (value: string) => {
         if (allComments.value) {
           const commentsByUrl = urlCommentMap.get(value) ?? [];
@@ -201,10 +203,10 @@ export default defineComponent({
             .flatMap((key) => nameCommentMap.get(key!) ?? []);
         }
       },
-      commentsToDisplay,
       reset: () => {
         commentsToDisplay.value = allComments.value;
       },
+
       numberOfCommentsFound: computed(() => {
         if (!commentsToDisplay.value && allComments.value) {
           return allComments.value.length;
@@ -214,7 +216,7 @@ export default defineComponent({
           return -1;
         }
       }),
-      filterExpansionCard,
+      apiErrorMessage: computed(() => errorStore.apiErrorMessage.value),
     };
   },
 });
