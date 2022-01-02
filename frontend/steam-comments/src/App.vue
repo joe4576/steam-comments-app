@@ -37,7 +37,8 @@
             <filter-expansion-card
               title="Filter Results"
               ref="filterExpansionCard"
-              @customFilterResult="filterBySteamUrl"
+              @steamUrlResult="filterBySteamUrl"
+              @steamNameResult="filterBySteamName"
               @reset="reset()"
               :disabled="!allComments"
             />
@@ -104,7 +105,7 @@ import api from "@/services/api";
 import { AuthorComment } from "../../../backend/src/types/types";
 import errorStore from "./store/errorStore";
 import FilterExpansionCard, {
-  FilterExpansionCardInterface,
+  FormInterface,
 } from "@/components/FilterExpansionCard.vue";
 
 export default defineComponent({
@@ -120,8 +121,9 @@ export default defineComponent({
     const errorMessages = ref<string[]>([]);
 
     const urlCommentMap = new Map<string, AuthorComment[]>();
+    const nameCommentMap = new Map<string, AuthorComment[]>();
 
-    const filterExpansionCard = ref<FilterExpansionCardInterface | null>(null);
+    const filterExpansionCard = ref<FormInterface | null>(null);
 
     const clearErrorMessages = () => {
       errorMessages.value = [];
@@ -129,7 +131,7 @@ export default defineComponent({
 
     const getComments = async () => {
       clearErrorMessages();
-      filterExpansionCard.value?.resetValue();
+      filterExpansionCard.value?.reset();
 
       const trimmedInput = userInput.value?.trim() ?? "";
       if (!trimmedInput) {
@@ -152,13 +154,23 @@ export default defineComponent({
 
       commentsToDisplay.value = allComments.value;
 
-      // map author url to AuthorComment array
       if (allComments.value) {
         allComments.value.forEach((c) => {
-          if (urlCommentMap.get(c.authorUrl)) {
-            urlCommentMap.get(c.authorUrl)!.push(c);
+          const authorUrl = c.authorUrl.toLowerCase();
+          const personaName = c.personaName.toLowerCase();
+
+          // map author url to AuthorComment array
+          if (urlCommentMap.get(authorUrl)) {
+            urlCommentMap.get(authorUrl)!.push(c);
           } else {
-            urlCommentMap.set(c.authorUrl, [c]);
+            urlCommentMap.set(authorUrl, [c]);
+          }
+
+          // map persona name to AuthorComment array
+          if (nameCommentMap.get(personaName)) {
+            nameCommentMap.get(personaName)!.push(c);
+          } else {
+            nameCommentMap.set(personaName, [c]);
           }
         });
       }
@@ -182,6 +194,12 @@ export default defineComponent({
       filterBySteamUrl: (value: string) => {
         if (allComments.value) {
           const commentsByUrl = urlCommentMap.get(value) ?? [];
+          commentsToDisplay.value = commentsByUrl;
+        }
+      },
+      filterBySteamName: (value: string) => {
+        if (allComments.value) {
+          const commentsByUrl = nameCommentMap.get(value.toLowerCase()) ?? [];
           commentsToDisplay.value = commentsByUrl;
         }
       },

@@ -2,8 +2,17 @@
   <expansion-card v-bind="$attrs">
     <template #default>
       <v-container>
-        <v-form @submit.prevent="$emit('customFilterResult', filterValue)">
-          <v-text-field v-model="filterValue" label="Filter by Steam URL" />
+        <v-form ref="form">
+          <v-text-field
+            v-model="steamUrl"
+            @keyup.enter="$emit('steamUrlResult', steamUrl)"
+            label="Filter by Steam URL"
+          />
+          <v-text-field
+            v-model="steamName"
+            @keyup.enter="$emit('steamNameResult', steamName)"
+            label="Filter by Steam Name"
+          />
         </v-form>
       </v-container>
     </template>
@@ -19,8 +28,8 @@
 import { defineComponent, ref } from "@vue/composition-api";
 import ExpansionCard from "@/components/base/ExpansionCard.vue";
 
-export interface FilterExpansionCardInterface {
-  resetValue: () => void;
+export interface FormInterface {
+  reset: () => void;
 }
 
 export default defineComponent({
@@ -29,17 +38,23 @@ export default defineComponent({
     ExpansionCard,
   },
   setup(props, context) {
-    const filterValue = ref("");
-    const resetValue = () => {
-      filterValue.value = "";
+    const steamUrl = ref("");
+    const steamName = ref("");
+    const form = ref<FormInterface | null>(null);
+
+    const resetForm = () => {
+      form.value?.reset();
     };
+
     return {
       reset: () => {
-        resetValue();
+        resetForm();
         context.emit("reset");
       },
-      filterValue,
-      resetValue,
+      steamUrl,
+      steamName,
+      form,
+      resetForm,
     };
   },
 });
