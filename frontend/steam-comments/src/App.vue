@@ -39,6 +39,7 @@
               ref="filterExpansionCard"
               @steamUrlResult="filterBySteamUrl"
               @steamNameResult="filterBySteamName"
+              @commentResult="filterByComment"
               @reset="reset()"
               :disabled="!allComments"
             />
@@ -107,7 +108,10 @@ import errorStore from "./store/errorStore";
 import FilterExpansionCard, {
   FormInterface,
 } from "@/components/FilterExpansionCard.vue";
-import { pushKeyToArrayMap } from "@/utils/maps";
+import {
+  populateArrayWithValuesFromMap,
+  pushKeyToArrayMap,
+} from "@/utils/maps";
 
 export default defineComponent({
   name: "App",
@@ -123,6 +127,7 @@ export default defineComponent({
 
     const urlCommentMap = new Map<string, AuthorComment[]>();
     const nameCommentMap = new Map<string, AuthorComment[]>();
+    const commentMap = new Map<string, AuthorComment[]>();
 
     const filterExpansionCard = ref<FormInterface | null>(null);
 
@@ -135,6 +140,7 @@ export default defineComponent({
       filterExpansionCard.value?.reset();
       urlCommentMap.clear();
       nameCommentMap.clear();
+      commentMap.clear();
 
       const trimmedInput = userInput.value?.trim() ?? "";
       if (!trimmedInput) {
@@ -161,10 +167,12 @@ export default defineComponent({
         allComments.value.forEach((c) => {
           const authorUrl = c.authorUrl.toLowerCase();
           const personaName = c.personaName.toLowerCase();
+          const commentContent = c.authorComment.toLowerCase();
 
           // Map url and persona name to an array of their comments
           pushKeyToArrayMap<AuthorComment>(authorUrl, c, urlCommentMap);
           pushKeyToArrayMap<AuthorComment>(personaName, c, nameCommentMap);
+          pushKeyToArrayMap<AuthorComment>(commentContent, c, commentMap);
         });
       }
 
@@ -187,22 +195,25 @@ export default defineComponent({
         return rowIndex % 2 !== 0 ? "white" : "#b0ceff";
       },
       filterBySteamUrl: (value: string) => {
-        if (allComments.value) {
+        if (allComments.value && value) {
           const commentsByUrl = urlCommentMap.get(value) ?? [];
           commentsToDisplay.value = commentsByUrl;
         }
       },
       filterBySteamName: (value: string) => {
         if (allComments.value && value) {
-          // Find similar keys to user input and get from map
-          commentsToDisplay.value = [...nameCommentMap.keys()]
-            .map((key) => {
-              if (key.includes(value.toLowerCase())) {
-                return key;
-              }
-            })
-            .filter((key) => !!key)
-            .flatMap((key) => nameCommentMap.get(key!) ?? []);
+          commentsToDisplay.value = populateArrayWithValuesFromMap(
+            value,
+            nameCommentMap
+          );
+        }
+      },
+      filterByComment: (value: string) => {
+        if (allComments.value && value) {
+          commentsToDisplay.value = populateArrayWithValuesFromMap(
+            value,
+            commentMap
+          );
         }
       },
       reset: () => {

@@ -13,6 +13,11 @@
             @keyup.enter="$emit('steamNameResult', steamName)"
             label="Filter by Steam Name"
           />
+          <v-text-field
+            v-model="comment"
+            @keyup.enter="$emit('commentResult', comment)"
+            label="Filter by Comment"
+          />
         </v-form>
       </v-container>
     </template>
@@ -40,6 +45,7 @@ export default defineComponent({
   setup(props, context) {
     const steamUrl = ref("");
     const steamName = ref("");
+    const comment = ref("");
     const form = ref<FormInterface | null>(null);
 
     const resetForm = () => {
@@ -55,6 +61,7 @@ export default defineComponent({
       steamName,
       form,
       resetForm,
+      comment,
     };
   },
 });
