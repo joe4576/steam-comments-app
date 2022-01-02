@@ -19,6 +19,10 @@
 import { defineComponent, ref } from "@vue/composition-api";
 import ExpansionCard from "@/components/base/ExpansionCard.vue";
 
+export interface FilterExpansionCardInterface {
+  resetValue: () => void;
+}
+
 export default defineComponent({
   name: "FilterExpansionCard",
   components: {
@@ -26,12 +30,16 @@ export default defineComponent({
   },
   setup(props, context) {
     const filterValue = ref("");
+    const resetValue = () => {
+      filterValue.value = "";
+    };
     return {
-      filterValue,
       reset: () => {
-        filterValue.value = "";
+        resetValue();
         context.emit("reset");
       },
+      filterValue,
+      resetValue,
     };
   },
 });

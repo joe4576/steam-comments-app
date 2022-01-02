@@ -36,6 +36,7 @@
           <v-col cols="6">
             <filter-expansion-card
               title="Filter Results"
+              ref="filterExpansionCard"
               @customFilterResult="filterBySteamUrl"
               @reset="reset()"
               :disabled="!allComments"
@@ -102,7 +103,9 @@ import { computed, defineComponent, ref } from "@vue/composition-api";
 import api from "@/services/api";
 import { AuthorComment } from "../../../backend/src/types/types";
 import errorStore from "./store/errorStore";
-import FilterExpansionCard from "@/components/FilterExpansionCard.vue";
+import FilterExpansionCard, {
+  FilterExpansionCardInterface,
+} from "@/components/FilterExpansionCard.vue";
 
 export default defineComponent({
   name: "App",
@@ -118,12 +121,16 @@ export default defineComponent({
 
     const urlCommentMap = new Map<string, AuthorComment[]>();
 
+    const filterExpansionCard = ref<FilterExpansionCardInterface | null>(null);
+
     const clearErrorMessages = () => {
       errorMessages.value = [];
     };
 
     const getComments = async () => {
       clearErrorMessages();
+      filterExpansionCard.value?.resetValue();
+
       const trimmedInput = userInput.value?.trim() ?? "";
       if (!trimmedInput) {
         errorMessages.value.push("Enter a steam url or steamid64");
@@ -191,6 +198,7 @@ export default defineComponent({
           return -1;
         }
       }),
+      filterExpansionCard,
     };
   },
 });
