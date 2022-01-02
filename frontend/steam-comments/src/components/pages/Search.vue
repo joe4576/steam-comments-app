@@ -98,7 +98,7 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, ref } from "@vue/composition-api";
+import { computed, defineComponent, ref, watch } from "@vue/composition-api";
 import api from "@/services/api";
 import { AuthorComment } from "../../../../../backend/src/types/types";
 import errorStore from "../../store/errorStore";
@@ -109,6 +109,7 @@ import {
   populateArrayWithValuesFromMap,
   pushKeyToArrayMap,
 } from "@/utils/maps";
+import { useRouter } from "@/router/router";
 
 export default defineComponent({
   name: "Search",
@@ -128,6 +129,8 @@ export default defineComponent({
 
     const filterExpansionCard = ref<FormInterface | null>(null);
 
+    const { router, route } = useRouter();
+
     const clearErrorMessages = () => {
       errorMessages.value = [];
     };
@@ -143,6 +146,17 @@ export default defineComponent({
       if (!trimmedInput) {
         errorMessages.value.push("Enter a steam url or steamid64");
         return;
+      }
+
+      // add query param if not already there or duplicate
+      if (
+        !route.value.query.account ||
+        route.value.query.account !== trimmedInput.toString()
+      ) {
+        await router.replace({
+          path: route.value.path,
+          query: { account: trimmedInput },
+        });
       }
 
       /**
@@ -176,6 +190,17 @@ export default defineComponent({
 
       loading.value = false;
     };
+
+    watch(
+      () => route.value.query,
+      async () => {
+        if (route.value.query.account) {
+          userInput.value = route.value.query.account.toString();
+          await getComments();
+        }
+      },
+      { immediate: true }
+    );
 
     return {
       getComments,
