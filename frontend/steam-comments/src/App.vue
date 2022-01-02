@@ -133,6 +133,8 @@ export default defineComponent({
     const getComments = async () => {
       clearErrorMessages();
       filterExpansionCard.value?.reset();
+      urlCommentMap.clear();
+      nameCommentMap.clear();
 
       const trimmedInput = userInput.value?.trim() ?? "";
       if (!trimmedInput) {
