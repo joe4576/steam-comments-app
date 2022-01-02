@@ -4,24 +4,42 @@
     <v-main>
       <v-container>
         <v-row>
-          <v-col>
-            <v-form @submit.prevent="getComments()">
-              <v-row justify="center">
-                <v-col class="mx-auto" cols="6">
-                  <v-text-field
-                    v-model="userInput"
-                    clearable
-                    autofocus
-                    @click:clear="clearErrorMessages()"
-                  />
-                </v-col>
-              </v-row>
-              <v-row justify="center">
-                <v-col class="mx-auto" cols="4">
-                  <v-btn @click="getComments()" block> Get comments </v-btn>
-                </v-col>
-              </v-row>
-            </v-form>
+          <v-col cols="6">
+            <v-card>
+              <v-container>
+                <v-row class="mx-3">
+                  <v-col>
+                    <v-form @submit.prevent="getComments()">
+                      <v-row>
+                        <v-col cols="12">
+                          <v-text-field
+                            v-model="userInput"
+                            clearable
+                            autofocus
+                            @click:clear="clearErrorMessages()"
+                          />
+                        </v-col>
+                      </v-row>
+                      <v-row>
+                        <v-col cols="auto">
+                          <v-btn @click="getComments()" block>
+                            Get comments
+                          </v-btn>
+                        </v-col>
+                      </v-row>
+                    </v-form>
+                  </v-col>
+                </v-row>
+              </v-container>
+            </v-card>
+          </v-col>
+          <v-col cols="6">
+            <filter-expansion-card
+              title="Filter Results"
+              @customFilterResult="filterBySteamUrl"
+              @reset="reset()"
+              :disabled="!allComments"
+            />
           </v-col>
         </v-row>
         <v-row v-if="errorMessages">
@@ -35,14 +53,16 @@
           </ul>
         </v-row>
       </v-container>
-      <v-container v-if="comments">
+      <v-container v-if="allComments">
         <v-row>
           <v-col>
-            Found <b>{{ comments.length }}</b> comments.
+            Found <b>{{ numberOfCommentsFound }}</b> comments.
           </v-col>
         </v-row>
+      </v-container>
+      <v-container v-if="commentsToDisplay">
         <v-row
-          v-for="(comment, index) in comments"
+          v-for="(comment, index) in commentsToDisplay"
           :key="index"
           :style="{
             'background-color': rowColor(index),
@@ -82,14 +102,21 @@ import { computed, defineComponent, ref } from "@vue/composition-api";
 import api from "@/services/api";
 import { AuthorComment } from "../../../backend/src/types/types";
 import errorStore from "./store/errorStore";
+import FilterExpansionCard from "@/components/FilterExpansionCard.vue";
 
 export default defineComponent({
   name: "App",
+  components: {
+    FilterExpansionCard,
+  },
   setup() {
     const userInput = ref<string | null>(null);
-    const comments = ref<AuthorComment[] | null>(null);
+    const allComments = ref<AuthorComment[] | null>(null);
+    const commentsToDisplay = ref<AuthorComment[] | null>(null);
     const loading = ref(false);
     const errorMessages = ref<string[]>([]);
+
+    const urlCommentMap = new Map<string, AuthorComment[]>();
 
     const clearErrorMessages = () => {
       errorMessages.value = [];
@@ -114,14 +141,28 @@ export default defineComponent({
       );
 
       loading.value = true;
-      comments.value = await api.getAllCommentsForUser(filteredInput);
+      allComments.value = await api.getAllCommentsForUser(filteredInput);
+
+      commentsToDisplay.value = allComments.value;
+
+      // map author url to AuthorComment array
+      if (allComments.value) {
+        allComments.value.forEach((c) => {
+          if (urlCommentMap.get(c.authorUrl)) {
+            urlCommentMap.get(c.authorUrl)!.push(c);
+          } else {
+            urlCommentMap.set(c.authorUrl, [c]);
+          }
+        });
+      }
+
       loading.value = false;
     };
 
     return {
       getComments,
       userInput,
-      comments,
+      allComments,
       loading,
       clearErrorMessages,
       errorMessages,
@@ -131,6 +172,25 @@ export default defineComponent({
       },
       defaultAvatarSrc:
         "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/avatars/48/4888d158c81bc8f1d7644321d9eb78b0048a9bda_medium.jpg",
+      filterBySteamUrl: (value: string) => {
+        if (allComments.value) {
+          const commentsByUrl = urlCommentMap.get(value) ?? [];
+          commentsToDisplay.value = commentsByUrl;
+        }
+      },
+      commentsToDisplay,
+      reset: () => {
+        commentsToDisplay.value = allComments.value;
+      },
+      numberOfCommentsFound: computed(() => {
+        if (!commentsToDisplay.value && allComments.value) {
+          return allComments.value.length;
+        } else if (commentsToDisplay.value) {
+          return commentsToDisplay.value.length;
+        } else {
+          return -1;
+        }
+      }),
     };
   },
 });
