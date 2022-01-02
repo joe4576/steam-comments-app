@@ -169,7 +169,8 @@ export default defineComponent({
           const personaName = c.personaName.toLowerCase();
           const commentContent = c.authorComment.toLowerCase();
 
-          // Map url and persona name to an array of their comments
+          // Map url, persona name and comment content to an array of
+          // comment objects they correspond to.
           pushKeyToArrayMap<AuthorComment>(authorUrl, c, urlCommentMap);
           pushKeyToArrayMap<AuthorComment>(personaName, c, nameCommentMap);
           pushKeyToArrayMap<AuthorComment>(commentContent, c, commentMap);
