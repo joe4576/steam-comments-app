@@ -108,13 +108,20 @@ import api from "@/services/api";
 import { AuthorComment } from "../../../../../backend/src/types/types";
 import errorStore from "../../store/errorStore";
 import FilterExpansionCard, {
-  FormInterface,
+  FilterExpansionCardInterface,
 } from "@/components/FilterExpansionCard.vue";
 import {
   populateArrayWithValuesFromMap,
   pushKeyToArrayMap,
 } from "@/utils/maps";
 import { useRouter } from "@/router/router";
+import isEqual from "lodash.isequal";
+
+interface QueryParameters {
+  url?: string;
+  name?: string;
+  comment?: string;
+}
 
 export default defineComponent({
   name: "Search",
@@ -132,7 +139,7 @@ export default defineComponent({
     const nameCommentMap = new Map<string, AuthorComment[]>();
     const commentMap = new Map<string, AuthorComment[]>();
 
-    const filterExpansionCard = ref<FormInterface | null>(null);
+    const filterExpansionCard = ref<FilterExpansionCardInterface | null>(null);
 
     const { router, route } = useRouter();
 
@@ -140,9 +147,13 @@ export default defineComponent({
       errorMessages.value = [];
     };
 
-    const getComments = async () => {
+    // Get all comments, with the option of clearing query params. Defaults to false
+    // as this method gets called if the page is initially visited with an existing
+    // account query param. Query params will be cleared if the reset button is
+    // hit manually.
+    const getComments = async (clearQueryParams: boolean = false) => {
       clearErrorMessages();
-      filterExpansionCard.value?.reset();
+      filterExpansionCard.value?.resetFormValues(clearQueryParams);
       urlCommentMap.clear();
       nameCommentMap.clear();
       commentMap.clear();
@@ -159,7 +170,6 @@ export default defineComponent({
         route.value.query.account !== trimmedInput.toString()
       ) {
         await router.replace({
-          path: route.value.path,
           query: { account: trimmedInput },
         });
       }
@@ -196,10 +206,76 @@ export default defineComponent({
       loading.value = false;
     };
 
+    // Clear and then set query parameters (currently only used for singular
+    // filter param, however multiple combinations of parameters could be
+    // supported in the future)
+    const setQueryParameters = async (parameters: QueryParameters) => {
+      await clearAllFilterQueryParametersExceptAccount();
+      const params = Object.assign({}, route.value.query);
+
+      // update query parameters with new values
+      for (const [key, value] of Object.entries(parameters)) {
+        Object.assign(params, { [key]: value });
+      }
+
+      if (!isEqual(params, route.value.query)) {
+        await router.replace({ query: params });
+      }
+    };
+
+    const clearAllFilterQueryParametersExceptAccount = async () => {
+      const queryCopy = Object.assign({}, route.value.query);
+      for (const [key, value] of Object.entries(queryCopy)) {
+        if (key !== "account") {
+          delete queryCopy[key];
+        }
+      }
+      if (!isEqual(route.value.query, queryCopy)) {
+        await router.replace({ query: queryCopy });
+      }
+    };
+
+    const filterBySteamUrl = async (value: string) => {
+      if (allComments.value && value) {
+        const commentsByUrl = urlCommentMap.get(value) ?? [];
+        commentsToDisplay.value = commentsByUrl;
+        await setQueryParameters({ url: value });
+      }
+    };
+
+    const filterBySteamName = async (value: string) => {
+      if (allComments.value && value) {
+        commentsToDisplay.value = populateArrayWithValuesFromMap(
+          value,
+          nameCommentMap
+        );
+        await setQueryParameters({ name: value });
+      }
+    };
+
+    const filterByComment = async (value: string) => {
+      if (allComments.value && value) {
+        commentsToDisplay.value = populateArrayWithValuesFromMap(
+          value,
+          commentMap
+        );
+        await setQueryParameters({ comment: value });
+      }
+    };
+
     onMounted(async () => {
       if (route.value.query.account) {
         userInput.value = route.value.query.account.toString();
         await getComments();
+      }
+      if (route.value.query.url) {
+        await filterBySteamUrl(route.value.query.url.toString());
+      }
+      if (route.value.query.name) {
+        await filterBySteamName(route.value.query.name.toString());
+      }
+      if (route.value.query.comment) {
+        await filterByComment(route.value.query.comment.toString());
       }
     });
 
@@ -214,34 +290,18 @@ export default defineComponent({
       filterExpansionCard,
       defaultAvatarSrc:
         "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/avatars/48/4888d158c81bc8f1d7644321d9eb78b0048a9bda_medium.jpg",
+      filterBySteamUrl,
+      filterBySteamName,
+      filterByComment,
 
       rowColor: (rowIndex: number) => {
         return rowIndex % 2 !== 0 ? "white" : "#b0ceff";
       },
-      filterBySteamUrl: (value: string) => {
-        if (allComments.value && value) {
-          const commentsByUrl = urlCommentMap.get(value) ?? [];
-          commentsToDisplay.value = commentsByUrl;
-        }
-      },
-      filterBySteamName: (value: string) => {
-        if (allComments.value && value) {
-          commentsToDisplay.value = populateArrayWithValuesFromMap(
-            value,
-            nameCommentMap
-          );
-        }
-      },
-      filterByComment: (value: string) => {
-        if (allComments.value && value) {
-          commentsToDisplay.value = populateArrayWithValuesFromMap(
-            value,
-            commentMap
-          );
-        }
-      },
-      reset: () => {
+
+      // reset all comments and clear filter query params
+      reset: async () => {
         commentsToDisplay.value = allComments.value;
+        await clearAllFilterQueryParametersExceptAccount();
       },
 
       numberOfCommentsFound: computed(() => {
