@@ -23,7 +23,7 @@
     </template>
     <template #controls>
       <v-container>
-        <v-btn @click="reset()">Reset</v-btn>
+        <v-btn @click="resetFormValues(true)">Reset</v-btn>
       </v-container>
     </template>
   </expansion-card>
@@ -33,8 +33,12 @@
 import { defineComponent, ref } from "@vue/composition-api";
 import ExpansionCard from "@/components/base/ExpansionCard.vue";
 
-export interface FormInterface {
+interface FormInterface {
   reset: () => void;
+}
+
+export interface FilterExpansionCardInterface {
+  resetFormValues: (emitEvent?: boolean) => void;
 }
 
 export default defineComponent({
@@ -48,19 +52,18 @@ export default defineComponent({
     const comment = ref("");
     const form = ref<FormInterface | null>(null);
 
-    const resetForm = () => {
-      form.value?.reset();
-    };
-
     return {
-      reset: () => {
-        resetForm();
-        context.emit("reset");
-      },
       steamUrl,
       steamName,
       form,
-      resetForm,
+
+      // Clear form values with the option of emitting a reset event.
+      resetFormValues: (emitEvent: boolean = false) => {
+        form.value?.reset();
+        if (emitEvent) {
+          context.emit("reset");
+        }
+      },
       comment,
     };
   },
