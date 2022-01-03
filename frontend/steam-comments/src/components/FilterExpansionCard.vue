@@ -7,23 +7,34 @@
             v-model="steamUrl"
             @keyup.enter="$emit('steamUrlResult', steamUrl)"
             label="Filter by Steam URL"
+            clearable
           />
           <v-text-field
             v-model="steamName"
             @keyup.enter="$emit('steamNameResult', steamName)"
             label="Filter by Steam Name"
+            clearable
           />
           <v-text-field
             v-model="comment"
             @keyup.enter="$emit('commentResult', comment)"
             label="Filter by Comment"
+            clearable
           />
         </v-form>
       </v-container>
     </template>
     <template #controls>
       <v-container>
-        <v-btn @click="resetFormValues(true)">Reset</v-btn>
+        <v-row>
+          <v-col cols="12" sm="auto">
+            <v-btn @click="resetFormValues(true)" block>Reset</v-btn>
+          </v-col>
+          <v-spacer />
+          <v-col cols="12" sm="auto">
+            <v-btn @click="submit()" class="primary" block>Filter</v-btn>
+          </v-col>
+        </v-row>
       </v-container>
     </template>
   </expansion-card>
@@ -55,6 +66,7 @@ export default defineComponent({
     return {
       steamUrl,
       steamName,
+      comment,
       form,
 
       // Clear form values with the option of emitting a reset event.
@@ -64,7 +76,20 @@ export default defineComponent({
           context.emit("reset");
         }
       },
-      comment,
+
+      submit: () => {
+        if (steamUrl.value) {
+          context.emit("steamUrlResult", steamUrl.value);
+        }
+
+        if (steamName.value) {
+          context.emit("steamNameResult", steamName.value);
+        }
+
+        if (comment.value) {
+          context.emit("commentResult", comment.value);
+        }
+      },
     };
   },
 });

@@ -2,7 +2,7 @@
   <div>
     <v-container>
       <v-row>
-        <v-col cols="6">
+        <v-col cols="12" md="6">
           <v-card>
             <v-container>
               <v-row class="mx-3">
@@ -19,7 +19,7 @@
                       </v-col>
                     </v-row>
                     <v-row>
-                      <v-col cols="auto">
+                      <v-col cols="12" sm="auto">
                         <v-btn @click="getComments()" block>
                           Get comments
                         </v-btn>
@@ -31,7 +31,7 @@
             </v-container>
           </v-card>
         </v-col>
-        <v-col cols="6">
+        <v-col cols="12" md="6">
           <filter-expansion-card
             title="Filter Results"
             ref="filterExpansionCard"
