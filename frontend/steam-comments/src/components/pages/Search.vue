@@ -1,91 +1,120 @@
 <template>
   <div>
-    <v-container>
-      <v-row>
-        <v-col cols="12" md="6">
-          <v-card>
-            <v-container>
-              <v-row class="mx-3">
-                <v-col>
-                  <v-form @submit.prevent="getComments()">
-                    <v-row>
-                      <v-col cols="12">
-                        <v-text-field
-                          v-model="userInput"
-                          clearable
-                          autofocus
-                          @click:clear="clearErrorMessages()"
-                        />
-                      </v-col>
-                    </v-row>
-                    <v-row>
-                      <v-col cols="12" sm="auto">
-                        <v-btn @click="getComments()" block>
-                          Get comments
-                        </v-btn>
-                      </v-col>
-                    </v-row>
-                  </v-form>
-                </v-col>
-              </v-row>
-            </v-container>
-          </v-card>
-        </v-col>
-        <v-col cols="12" md="6">
-          <filter-expansion-card
-            title="Filter Results"
-            ref="filterExpansionCard"
-            @steamUrlResult="filterBySteamUrl"
-            @steamNameResult="filterBySteamName"
-            @commentResult="filterByComment"
-            @reset="reset()"
-            :disabled="!allComments"
-          />
-        </v-col>
-      </v-row>
-      <v-row v-if="errorMessages">
-        <ul v-for="(error, index) in errorMessages" :key="index">
-          <li class="error-msg">{{ error }}</li>
-        </ul>
-      </v-row>
-      <v-row v-if="apiErrorMessage">
-        <ul>
-          <li class="error-msg">{{ apiErrorMessage }}</li>
-        </ul>
-      </v-row>
+    <!-- Header section-->
+    <v-container class="main-container">
+      <v-container>
+        <v-row>
+          <!-- Search component (hint hint)-->
+          <v-col cols="12" md="6">
+            <v-card>
+              <v-container>
+                <v-row class="mx-3">
+                  <v-col>
+                    <v-form @submit.prevent="getComments()">
+                      <v-row>
+                        <v-col cols="12">
+                          <v-text-field
+                            v-model="userInput"
+                            clearable
+                            autofocus
+                            @click:clear="clearErrorMessages()"
+                          />
+                        </v-col>
+                      </v-row>
+                      <v-row>
+                        <v-col cols="12" sm="auto">
+                          <v-btn @click="getComments()" block>
+                            Get comments
+                          </v-btn>
+                        </v-col>
+                      </v-row>
+                    </v-form>
+                  </v-col>
+                </v-row>
+              </v-container>
+            </v-card>
+          </v-col>
+
+          <v-col cols="12" md="6">
+            <filter-expansion-card
+              title="Filter Results"
+              ref="filterExpansionCard"
+              @steamUrlResult="filterBySteamUrl"
+              @steamNameResult="filterBySteamName"
+              @commentResult="filterByComment"
+              @reset="reset()"
+              :disabled="!allComments"
+            />
+          </v-col>
+        </v-row>
+      </v-container>
+
+      <!-- Error messages -->
+      <v-container>
+        <v-row v-if="errorMessages">
+          <ul v-for="(error, index) in errorMessages" :key="index">
+            <li class="error-msg">{{ error }}</li>
+          </ul>
+        </v-row>
+        <v-row v-if="apiErrorMessage">
+          <ul>
+            <li class="error-msg">{{ apiErrorMessage }}</li>
+          </ul>
+        </v-row>
+      </v-container>
+
+      <!-- Number of comments found -->
+      <v-container v-if="allComments">
+        <v-row>
+          <v-col>
+            Found <b>{{ numberOfCommentsFound }}</b> comments.
+          </v-col>
+        </v-row>
+      </v-container>
+
+      <!-- Comment section-->
+      <v-container v-if="commentsToDisplay" class="mx-auto">
+        <v-row
+          v-for="(comment, index) in commentsToDisplay"
+          :key="index"
+          :style="{
+            'background-color': rowColor(index),
+          }"
+          dense
+          class="pa-2"
+          align="center"
+        >
+          <!-- Avatar -->
+          <v-col cols="auto" class="ml-1">
+            <v-row>
+              <v-col>
+                <a :href="comment.authorUrl" target="_blank">
+                  <img
+                    :src="comment.avatarSrc"
+                    style="margin-top: 5px"
+                    alt="Player avatar"
+                  />
+                </a>
+              </v-col>
+            </v-row>
+          </v-col>
+          <!-- Name -->
+          <v-col cols="8" sm="4" md="3" lg="2" class="ml-2">
+            <v-row>
+              <v-col sm="auto">
+                {{ comment.personaName }}
+              </v-col>
+            </v-row>
+          </v-col>
+          <!-- Comment -->
+          <v-col cols="12" sm="6" md="6" lg="7" style="overflow-x: overlay">
+            {{ comment.authorComment }}
+          </v-col>
+        </v-row>
+      </v-container>
     </v-container>
-    <v-container v-if="allComments">
-      <v-row>
-        <v-col>
-          Found <b>{{ numberOfCommentsFound }}</b> comments.
-        </v-col>
-      </v-row>
-    </v-container>
-    <v-container v-if="commentsToDisplay">
-      <v-row
-        v-for="(comment, index) in commentsToDisplay"
-        :key="index"
-        :style="{
-          'background-color': rowColor(index),
-          'overflow-y': 'scroll',
-        }"
-      >
-        <v-col cols="auto">
-          <a :href="comment.authorUrl" target="_blank">
-            <img :src="comment.avatarSrc" alt="Player avatar" />
-          </a>
-        </v-col>
-        <v-col cols="auto">
-          <v-row>
-            <v-col cols="12">
-              <pre>{{ comment.personaName }}</pre>
-            </v-col>
-          </v-row>
-        </v-col>
-        <v-spacer />
-        <v-col cols="7">{{ comment.authorComment }}</v-col>
-      </v-row>
-    </v-container>
+
+    <!-- Dialogs -->
     <v-dialog v-model="loading" hide-overlay persistent width="300">
       <v-card color="primary" dark>
         <v-card-text>
@@ -295,7 +324,7 @@ export default defineComponent({
       filterByComment,
 
       rowColor: (rowIndex: number) => {
-        return rowIndex % 2 !== 0 ? "white" : "#b0ceff";
+        return rowIndex % 2 !== 0 ? "#eeeeee" : "#b0ceff";
       },
 
       // reset all comments and clear filter query params
@@ -322,5 +351,8 @@ export default defineComponent({
 <style scoped>
 .error-msg {
   color: red;
+}
+.main-container {
+  max-width: 1100px;
 }
 </style>
