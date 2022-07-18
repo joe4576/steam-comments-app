@@ -1,4 +1,4 @@
-import fetch from "node-fetch";
+import fetch, { RequestInit } from "node-fetch";
 import { JSDOM } from "jsdom";
 import express from "express";
 import cors from "cors";
@@ -14,6 +14,11 @@ dotenv.config();
 const app = express();
 app.use(cors());
 
+const getTypedApiResponse = async <T>(
+  url: string,
+  options?: RequestInit
+): Promise<T> => (await fetch(url, options).then((res) => res.json())) as T;
+
 /**
  * Checks if a string contains only numbers. If it does, return it as an assumed valid steamid64.
  * If it contains anything but numbers, it is assumed to be a vanity url. Check if that url is associated with
@@ -27,11 +32,10 @@ const getValidSteamId64 = async (
   const assumedSteamId64 = doesStringOnlyContainNumbers(input);
 
   if (!assumedSteamId64) {
-    const res = await fetch(
+    const vanityUrl = await getTypedApiResponse<SteamResolveVanityUrlReponse>(
       `https://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=${process.env.STEAM_API_KEY}&vanityurl=${input}`
     );
-    const json = (await res.json()) as SteamResolveVanityUrlReponse;
-    return json.response.steamid ? json.response.steamid : undefined;
+    return vanityUrl.response.steamid ? vanityUrl.response.steamid : undefined;
   } else {
     return input;
   }
@@ -49,19 +53,19 @@ const getProfileCommentsFromSteamId64 = async (
   // my steamId: 76561198085973818
   // limit at 1000 for now
   const url = `https://steamcommunity.com/comment/Profile/render/${steamId64}/-1/?start=0&count=1000`;
-  const data = await fetch(url, {
+
+  const steamCommentData = await getTypedApiResponse<SteamCommentData>(url, {
     headers: {
       Origin: "https://steamcommunity.com",
       Host: "steamcommunity.com",
       Accept: "text/javascript, text/html, application/xml, text/xml, */*",
     },
   });
-  const payload = (await data.json()) as SteamCommentData;
 
-  if (payload.total_count === 0) {
+  if (steamCommentData.total_count === 0) {
     return null;
   } else {
-    const dom = new JSDOM(payload.comments_html);
+    const dom = new JSDOM(steamCommentData.comments_html);
 
     const profileComments: AuthorComment[] = [];
 
