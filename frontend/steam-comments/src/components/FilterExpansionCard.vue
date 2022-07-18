@@ -24,14 +24,22 @@
         </v-form>
       </v-container>
     </template>
-    <template #controls>
+    <template #controls="{ padding }">
       <v-container>
-        <v-row>
-          <v-col cols="12" sm="auto">
+        <v-row :class="padding">
+          <v-col
+            cols="12"
+            sm="auto"
+            :class="{ 'px-0': $vuetify.breakpoint.xsOnly }"
+          >
             <v-btn @click="resetFormValues(true)" block>Reset</v-btn>
           </v-col>
           <v-spacer />
-          <v-col cols="12" sm="auto">
+          <v-col
+            cols="12"
+            sm="auto"
+            :class="{ 'px-0': $vuetify.breakpoint.xsOnly }"
+          >
             <v-btn @click="submit()" class="primary" block>Filter</v-btn>
           </v-col>
         </v-row>
