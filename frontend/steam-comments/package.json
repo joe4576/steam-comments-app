@@ -4,18 +4,25 @@
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
-    "build": "vue-cli-service build"
+    "build": "vue-cli-service build",
+    "deploy": "npm run build && sudo netlify deploy",
+    "dev": "netlify dev"
   },
   "dependencies": {
+    "@netlify/functions": "^1.0.0",
     "@vue/composition-api": "^1.4.2",
+    "canvas": "^2.9.3",
     "core-js": "^3.6.5",
+    "jsdom": "^18.1.1",
     "lodash.isequal": "^4.5.0",
     "vue": "^2.6.11",
     "vue-router": "^3.5.3",
     "vuetify": "^2.4.0"
   },
   "devDependencies": {
+    "@types/jsdom": "^16.2.14",
     "@types/lodash.isequal": "^4.5.5",
+    "@types/node-fetch": "^2.6.2",
     "@vue/cli-plugin-babel": "~4.5.0",
     "@vue/cli-plugin-typescript": "~4.5.0",
     "@vue/cli-service": "~4.5.0",
