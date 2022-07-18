@@ -104,7 +104,7 @@ const getProfileCommentsFromSteamId64 = async (
             authorComment: commentText,
             personaName: personaName ?? "",
             avatarSrc: "",
-          } as AuthorComment);
+          });
         }
       });
 
