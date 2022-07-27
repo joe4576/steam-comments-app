@@ -1,14 +1,10 @@
 [build]
-  base = "/frontend/steam-comments"
+  base = "/steam-comments"
   publish = "/dist"
-  # Note: node-canvas package was preventing hot reloads.
-  # This seems to be fixed by rebuilding before serve.
-  # See https://bit.ly/3aQhkpJ
-  build = "npm rebuild && npm run serve"
+  command = "npm run build"
 
 [functions]
-  directory = "netlify/functions"
-  node_bundler = "esbuild"
+  directory = "../netlify/functions"
 
 [[redirects]]
   to = "/.netlify/functions/comments" 
