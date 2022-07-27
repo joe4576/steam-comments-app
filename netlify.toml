@@ -7,7 +7,8 @@
   build = "npm rebuild && npm run serve"
 
 [functions]
-directory = "netlify/functions"
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
 
 [[redirects]]
   to = "/.netlify/functions/comments" 
