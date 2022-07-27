@@ -1,6 +1,6 @@
 import { Handler } from "@netlify/functions";
 import dotenv from "dotenv";
-import { JSDOM } from "jsdom";
+// import { JSDOM } from "jsdom";
 import fetch, { RequestInit } from "node-fetch";
 
 dotenv.config();
@@ -53,7 +53,7 @@ const getProfileCommentsFromSteamId64 = async (
     },
   });
 
-  if (steamCommentData.total_count === 0) {
+  /*if (steamCommentData.total_count === 0) {
     return null;
   } else {
     const dom = new JSDOM(steamCommentData.comments_html);
@@ -121,7 +121,8 @@ const getProfileCommentsFromSteamId64 = async (
     });
 
     return profileComments;
-  }
+  } */
+  return [];
 };
 
 const handler: Handler = async (event, context) => {
