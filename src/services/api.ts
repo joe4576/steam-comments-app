@@ -1,5 +1,5 @@
 import errorStore from "@/store/errorStore";
-import { AuthorComment } from "../../../../backend/src/types/types";
+import { AuthorComment } from "@/types/types";
 
 const BASE_URL = process.env.VUE_APP_BASE_URL;
 

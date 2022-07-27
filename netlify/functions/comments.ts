@@ -1,18 +1,14 @@
-import fetch, { RequestInit } from "node-fetch";
-import { JSDOM } from "jsdom";
-import express from "express";
-import cors from "cors";
-import {
-  SteamCommentData,
-  AuthorComment,
-  SteamResolveVanityUrlReponse,
-} from "./types/types";
+import { Handler } from "@netlify/functions";
 import dotenv from "dotenv";
-import { doesStringOnlyContainNumbers } from "./utils/strings";
+// import { JSDOM } from "jsdom";
+import fetch, { RequestInit } from "node-fetch";
+import {
+  AuthorComment,
+  SteamCommentData,
+  SteamResolveVanityUrlReponse,
+} from "../../src/types/types";
 
 dotenv.config();
-const app = express();
-app.use(cors());
 
 const getTypedApiResponse = async <T>(
   url: string,
@@ -29,13 +25,13 @@ const getTypedApiResponse = async <T>(
 const getValidSteamId64 = async (
   input: string
 ): Promise<string | undefined> => {
-  const assumedSteamId64 = doesStringOnlyContainNumbers(input);
+  const doesInputContainOnlyNumbers = !isNaN(+input);
 
-  if (!assumedSteamId64) {
+  if (!doesInputContainOnlyNumbers) {
     const vanityUrl = await getTypedApiResponse<SteamResolveVanityUrlReponse>(
       `https://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=${process.env.STEAM_API_KEY}&vanityurl=${input}`
     );
-    return vanityUrl.response.steamid ? vanityUrl.response.steamid : undefined;
+    return vanityUrl.response?.steamid ?? undefined;
   } else {
     return input;
   }
@@ -47,7 +43,7 @@ const getValidSteamId64 = async (
  * @returns Array of comment objects with each element containing author profile url and comment
  */
 const getProfileCommentsFromSteamId64 = async (
-  steamId64: string
+  steamId64: string | undefined
 ): Promise<AuthorComment[] | null> => {
   // kennyS steamID64: 76561198024905796
   // my steamId: 76561198085973818
@@ -62,7 +58,7 @@ const getProfileCommentsFromSteamId64 = async (
     },
   });
 
-  if (steamCommentData.total_count === 0) {
+  /*if (steamCommentData.total_count === 0) {
     return null;
   } else {
     const dom = new JSDOM(steamCommentData.comments_html);
@@ -130,31 +126,35 @@ const getProfileCommentsFromSteamId64 = async (
     });
 
     return profileComments;
-  }
+  } */
+  return [];
 };
 
-app.get("/comments/:steamIdOrVanityUrl", async (req, res) => {
-  const steamId64 = await getValidSteamId64(req.params.steamIdOrVanityUrl);
+const handler: Handler = async (event, context) => {
+  const steamIdOrVanityUrl = event.path.split("/api/comments/")[1] ?? "";
+  const steamId64 = await getValidSteamId64(steamIdOrVanityUrl);
 
   if (!steamId64) {
-    res.statusMessage = "Steam account not found";
-    res.sendStatus(404);
-    return;
+    return {
+      statusCode: 404,
+    };
   }
 
   const comments = await getProfileCommentsFromSteamId64(steamId64);
 
-  if (!comments) {
-    res.statusMessage = "No comments found";
-    res.sendStatus(404);
-    return;
-  }
+  return {
+    statusCode: 200,
+    body: JSON.stringify(comments),
+  };
+};
 
-  res.send(comments);
-});
+/**
+ * Note: importing anything from other files throws the following error:
+ * `Module did not self-register: '.../.netlify/functions-serve/comments/src/node_modules/canvas/build/Release/canvas.node'`
+ * This has something to do with the `canvas` package which is a dependency of `JSDom`.
+ *
+ * Not entirely sure if this is a netlify CLI issue with `JSDom`, or whether it is just
+ * an M1 Mac issue. This needs further investigation.
+ */
 
-const PORT = 3080;
-
-app.listen(PORT, () => {
-  console.log(`Express listening on port ${PORT}...`);
-});
+export { handler };

@@ -1,0 +1,8 @@
+[build]
+  publish = "/dist"
+  command = "npm run build"
+
+[[redirects]]
+  to = "/.netlify/functions/comments" 
+  from = "/api/*" 
+  status = 200

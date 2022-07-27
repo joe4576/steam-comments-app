@@ -134,7 +134,6 @@ import {
   ref,
 } from "@vue/composition-api";
 import api from "@/services/api";
-import { AuthorComment } from "../../../../../backend/src/types/types";
 import errorStore from "../../store/errorStore";
 import FilterExpansionCard, {
   FilterExpansionCardInterface,
@@ -145,6 +144,7 @@ import {
 } from "@/utils/maps";
 import { useRouter } from "@/router/router";
 import isEqual from "lodash.isequal";
+import { AuthorComment } from "@/types/types";
 
 interface QueryParameters {
   url?: string;

@@ -17,11 +17,12 @@ export interface AuthorComment {
   avatarSrc: string;
 }
 
-interface SteamResolveVanityUrlData {
+export interface SteamResolveVanityUrlData {
   steamid?: string;
   success: number;
   message?: string;
 }
+
 export interface SteamResolveVanityUrlReponse {
-  response: SteamResolveVanityUrlData;
+  response?: SteamResolveVanityUrlData;
 }
