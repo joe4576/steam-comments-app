@@ -6,7 +6,7 @@ import {
   AuthorComment,
   SteamCommentData,
   SteamResolveVanityUrlReponse,
-} from "../../steam-comments/src/types/types";
+} from "../../src/types/types";
 
 dotenv.config();
 
