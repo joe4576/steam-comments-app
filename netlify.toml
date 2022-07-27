@@ -1,10 +1,6 @@
 [build]
-  # base = "/steam-comments"
-  # publish = "/dist"
+  publish = "/dist"
   command = "npm run build"
-
-# [functions]
-#   directory = "../netlify/functions"
 
 [[redirects]]
   to = "/.netlify/functions/comments" 
