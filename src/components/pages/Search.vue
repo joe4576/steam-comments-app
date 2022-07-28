@@ -4,37 +4,13 @@
     <v-container class="main-container">
       <v-container>
         <v-row>
-          <!-- Search component (hint hint)-->
           <v-col cols="12" md="6">
-            <v-card>
-              <v-container>
-                <v-row class="mx-3">
-                  <v-col>
-                    <v-form @submit.prevent="getComments()">
-                      <v-row>
-                        <v-col cols="12">
-                          <v-text-field
-                            v-model="userInput"
-                            clearable
-                            autofocus
-                            @click:clear="clearErrorMessages()"
-                          />
-                        </v-col>
-                      </v-row>
-                      <v-row>
-                        <v-col cols="12" sm="auto">
-                          <v-btn @click="getComments()" block>
-                            Get comments
-                          </v-btn>
-                        </v-col>
-                      </v-row>
-                    </v-form>
-                  </v-col>
-                </v-row>
-              </v-container>
-            </v-card>
+            <search-card
+              v-model="userInput"
+              @search="getComments()"
+              @clear-error-messages="clearErrorMessages()"
+            />
           </v-col>
-
           <v-col cols="12" md="6">
             <filter-expansion-card
               title="Filter Results"
@@ -145,6 +121,7 @@ import {
 import { useRouter } from "@/router/router";
 import isEqual from "lodash.isequal";
 import { AuthorComment } from "@/types/types";
+import SearchCard from "@/components/SearchCard.vue";
 
 interface QueryParameters {
   url?: string;
@@ -156,9 +133,10 @@ export default defineComponent({
   name: "Search",
   components: {
     FilterExpansionCard,
+    SearchCard,
   },
   setup() {
-    const userInput = ref<string | null>(null);
+    const userInput = ref<string>("");
     const allComments = ref<AuthorComment[] | null>(null);
     const commentsToDisplay = ref<AuthorComment[] | null>(null);
     const loading = ref(false);
