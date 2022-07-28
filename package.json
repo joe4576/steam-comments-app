@@ -10,6 +10,7 @@
   "dependencies": {
     "@netlify/functions": "^1.0.0",
     "@vue/composition-api": "^1.4.2",
+    "cheerio": "^1.0.0-rc.12",
     "core-js": "^3.6.5",
     "dotenv": "^16.0.1",
     "lodash.isequal": "^4.5.0",
