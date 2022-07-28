@@ -31,7 +31,7 @@ const getValidSteamId64 = async (
     const vanityUrl: SteamResolveVanityUrlReponse = await getTypedApiResponse(
       `https://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=${process.env.STEAM_API_KEY}&vanityurl=${input}`
     );
-    return vanityUrl.response?.steamid ?? undefined;
+    return vanityUrl.response?.steamid;
   } else {
     return input;
   }
