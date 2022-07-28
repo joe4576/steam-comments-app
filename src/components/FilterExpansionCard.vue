@@ -4,20 +4,20 @@
       <v-container>
         <v-form ref="form">
           <v-text-field
-            v-model="steamUrl"
-            @keyup.enter="$emit('steamUrlResult', steamUrl)"
+            v-model="filterValues.url"
+            @keyup.enter="submit"
             label="Filter by Steam URL"
             clearable
           />
           <v-text-field
-            v-model="steamName"
-            @keyup.enter="$emit('steamNameResult', steamName)"
+            v-model="filterValues.name"
+            @keyup.enter="submit"
             label="Filter by Steam Name"
             clearable
           />
           <v-text-field
-            v-model="comment"
-            @keyup.enter="$emit('commentResult', comment)"
+            v-model="filterValues.comment"
+            @keyup.enter="submit"
             label="Filter by Comment"
             clearable
           />
@@ -60,6 +60,12 @@ export interface FilterExpansionCardInterface {
   resetFormValues: (emitEvent?: boolean) => void;
 }
 
+export interface QueryParameters {
+  url?: string;
+  name?: string;
+  comment?: string;
+}
+
 export default defineComponent({
   name: "FilterExpansionCard",
   components: {
@@ -71,11 +77,14 @@ export default defineComponent({
     const comment = ref("");
     const form = ref<FormInterface | null>(null);
 
+    const filterValues = ref<QueryParameters>({});
+
     return {
       steamUrl,
       steamName,
       comment,
       form,
+      filterValues,
 
       // Clear form values with the option of emitting a reset event.
       resetFormValues: (emitEvent: boolean = false) => {
@@ -85,19 +94,7 @@ export default defineComponent({
         }
       },
 
-      submit: () => {
-        if (steamUrl.value) {
-          context.emit("steamUrlResult", steamUrl.value);
-        }
-
-        if (steamName.value) {
-          context.emit("steamNameResult", steamName.value);
-        }
-
-        if (comment.value) {
-          context.emit("commentResult", comment.value);
-        }
-      },
+      submit: () => context.emit("filter", filterValues.value),
     };
   },
 });
