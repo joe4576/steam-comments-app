@@ -1,12 +1,12 @@
 import { Handler } from "@netlify/functions";
 import dotenv from "dotenv";
-// import { JSDOM } from "jsdom";
 import fetch, { RequestInit } from "node-fetch";
 import {
   AuthorComment,
   SteamCommentData,
   SteamResolveVanityUrlReponse,
 } from "../../src/types/types";
+import { load } from "cheerio";
 
 dotenv.config();
 
@@ -28,7 +28,7 @@ const getValidSteamId64 = async (
   const doesInputContainOnlyNumbers = !isNaN(+input);
 
   if (!doesInputContainOnlyNumbers) {
-    const vanityUrl = await getTypedApiResponse<SteamResolveVanityUrlReponse>(
+    const vanityUrl: SteamResolveVanityUrlReponse = await getTypedApiResponse(
       `https://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=${process.env.STEAM_API_KEY}&vanityurl=${input}`
     );
     return vanityUrl.response?.steamid ?? undefined;
@@ -44,13 +44,15 @@ const getValidSteamId64 = async (
  */
 const getProfileCommentsFromSteamId64 = async (
   steamId64: string | undefined
-): Promise<AuthorComment[] | null> => {
-  // kennyS steamID64: 76561198024905796
-  // my steamId: 76561198085973818
+): Promise<AuthorComment[]> => {
+  if (!steamId64) {
+    return [];
+  }
+
   // limit at 1000 for now
   const url = `https://steamcommunity.com/comment/Profile/render/${steamId64}/-1/?start=0&count=1000`;
 
-  const steamCommentData = await getTypedApiResponse<SteamCommentData>(url, {
+  const steamCommentData: SteamCommentData = await getTypedApiResponse(url, {
     headers: {
       Origin: "https://steamcommunity.com",
       Host: "steamcommunity.com",
@@ -58,76 +60,40 @@ const getProfileCommentsFromSteamId64 = async (
     },
   });
 
-  /*if (steamCommentData.total_count === 0) {
-    return null;
+  const $ = load(steamCommentData.comments_html);
+  const profileComments: AuthorComment[] = [];
+
+  const fallbackAuthorUrl = "https://steamcommunity.com/";
+  const fallbackAvatarSrc =
+    "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/avatars/48/4888d158c81bc8f1d7644321d9eb78b0048a9bda_medium.jpg";
+
+  if (steamCommentData.total_count === 0) {
+    return [];
   } else {
-    const dom = new JSDOM(steamCommentData.comments_html);
+    $(".commentthread_comment").each((_, el) => {
+      const author = $(el).find(".commentthread_comment_author");
+      const authorUrl =
+        $(author).find(".commentthread_author_link").prop("href") ??
+        fallbackAuthorUrl;
+      const personaName = $(author).find("bdi").text().trim();
+      const authorComment = $(el)
+        .find(".commentthread_comment_text")!
+        .text()
+        .trim();
+      const avatarSrc =
+        $(el).find(".commentthread_comment_avatar img").prop("src") ??
+        fallbackAvatarSrc;
 
-    const profileComments: AuthorComment[] = [];
-
-    // maps a comment id to an author comment object
-    const commentMap = new Map<string, AuthorComment>();
-
-    const commentContents = dom.window.document.querySelectorAll(
-      ".commentthread_comment"
-    );
-
-    commentContents.forEach((ct) => {
-      const commentThreads = ct.querySelectorAll(
-        ".commentthread_comment_content"
-      );
-
-      const commentId = ct.getAttribute("id")!.toString();
-
-      // get text content and comment author url
-      commentThreads.forEach((c) => {
-        const authorUrl = (
-          c.querySelector(".commentthread_comment_author a") as
-            | HTMLAnchorElement
-            | undefined
-        )?.href;
-
-        const commentText = c
-          .querySelector(".commentthread_comment_text")
-          ?.innerHTML.trim()
-          .replace(/<.*?>/g, "");
-
-        const personaName = c.querySelector("bdi")?.innerHTML.trim();
-
-        if (authorUrl && commentText) {
-          commentMap.set(commentId, {
-            authorUrl: authorUrl,
-            authorComment: commentText,
-            personaName: personaName ?? "",
-            avatarSrc: "",
-          });
-        }
+      profileComments.push({
+        authorComment,
+        authorUrl,
+        avatarSrc,
+        personaName,
       });
-
-      // get avatar src
-      const allImageElements = ct.querySelector(
-        ".commentthread_comment_avatar a > img"
-      );
-
-      const mediumImageSrc = allImageElements!
-        .getAttribute("srcset")
-        ?.split(" ")
-        .find((src) => src.includes("medium"));
-
-      const existingCommentObject = commentMap.get(commentId);
-      if (existingCommentObject) {
-        existingCommentObject.avatarSrc = mediumImageSrc ?? "";
-      }
     });
+  }
 
-    // Add each comment to an array to be returned
-    commentMap.forEach((comment) => {
-      profileComments.push(comment);
-    });
-
-    return profileComments;
-  } */
-  return [];
+  return profileComments;
 };
 
 const handler: Handler = async (event, context) => {
@@ -147,14 +113,5 @@ const handler: Handler = async (event, context) => {
     body: JSON.stringify(comments),
   };
 };
-
-/**
- * Note: importing anything from other files throws the following error:
- * `Module did not self-register: '.../.netlify/functions-serve/comments/src/node_modules/canvas/build/Release/canvas.node'`
- * This has something to do with the `canvas` package which is a dependency of `JSDom`.
- *
- * Not entirely sure if this is a netlify CLI issue with `JSDom`, or whether it is just
- * an M1 Mac issue. This needs further investigation.
- */
 
 export { handler };
