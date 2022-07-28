@@ -78,7 +78,9 @@
           <v-col cols="8" sm="4" md="3" lg="2" class="ml-2">
             <v-row>
               <v-col sm="auto">
-                {{ comment.personaName }}
+                <p style="overflow-x: scroll" class="my-auto">
+                  {{ comment.personaName }}
+                </p>
               </v-col>
             </v-row>
           </v-col>
@@ -110,7 +112,7 @@ import {
   ref,
 } from "@vue/composition-api";
 import api from "@/services/api";
-import errorStore from "../../store/errorStore";
+import errorStore from "@/store/errorStore";
 import FilterExpansionCard, {
   FilterExpansionCardInterface,
 } from "@/components/FilterExpansionCard.vue";
@@ -295,8 +297,6 @@ export default defineComponent({
       errorMessages,
       commentsToDisplay,
       filterExpansionCard,
-      defaultAvatarSrc:
-        "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/avatars/48/4888d158c81bc8f1d7644321d9eb78b0048a9bda_medium.jpg",
       filterBySteamUrl,
       filterBySteamName,
       filterByComment,
