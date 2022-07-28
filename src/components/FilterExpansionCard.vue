@@ -32,7 +32,7 @@
             sm="auto"
             :class="{ 'px-0': $vuetify.breakpoint.xsOnly }"
           >
-            <v-btn @click="resetFormValues()" block>Reset</v-btn>
+            <v-btn @click="resetFormValues(true)" block>Reset</v-btn>
           </v-col>
           <v-spacer />
           <v-col
@@ -57,7 +57,7 @@ interface FormInterface {
 }
 
 export interface FilterExpansionCardInterface {
-  resetFormValues: () => void;
+  resetFormValues: (resetQueryParams?: boolean) => void;
 }
 
 export interface QueryParameters {
@@ -104,9 +104,11 @@ export default defineComponent({
       filterValues,
 
       // Clear form values
-      resetFormValues: () => {
+      resetFormValues: (resetQueryParams: boolean = false) => {
         form.value?.reset();
-        context.emit("reset");
+        if (resetQueryParams) {
+          context.emit("reset");
+        }
       },
 
       submit: () => context.emit("filter", filterValues.value),

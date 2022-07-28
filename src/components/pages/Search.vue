@@ -149,7 +149,6 @@ export default defineComponent({
      */
     const getComments = async () => {
       clearErrorMessages();
-      filterCommentsToDisplay(undefined, true);
       filterExpansionCard.value?.resetFormValues();
 
       const trimmedInput = userInput.value?.trim() ?? "";
