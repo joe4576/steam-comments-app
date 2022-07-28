@@ -17,6 +17,7 @@
               ref="filterExpansionCard"
               :disabled="!allComments"
               :default-filter-values="defaultQueryParams"
+              :default-expanded="expandFilterCardByDefault"
               @filter="filterCommentsToDisplay"
               @reset="reset()"
             />
@@ -135,6 +136,7 @@ export default defineComponent({
     const errorMessages = ref<string[]>([]);
 
     const defaultQueryParams = ref<QueryParameters | null>(null);
+    const expandFilterCardByDefault = ref(false);
 
     const filterExpansionCard = ref<FilterExpansionCardInterface | null>(null);
 
@@ -265,6 +267,7 @@ export default defineComponent({
           name,
         };
         await filterCommentsToDisplay(defaultQueryParams.value);
+        expandFilterCardByDefault.value = true;
       }
     });
 
@@ -299,6 +302,7 @@ export default defineComponent({
       apiErrorMessage: computed(() => errorStore.apiErrorMessage.value),
       filterCommentsToDisplay,
       defaultQueryParams,
+      expandFilterCardByDefault,
     };
   },
 });
