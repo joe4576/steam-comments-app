@@ -77,7 +77,7 @@ const getProfileCommentsFromSteamId64 = async (
         fallbackAuthorUrl;
       const personaName = $(author).find("bdi").text().trim();
       const authorComment = $(el)
-        .find(".commentthread_comment_text")!
+        .find(".commentthread_comment_text")
         .text()
         .trim();
       const avatarSrc =
