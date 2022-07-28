@@ -14,16 +14,5 @@ export default defineComponent({
   components: {
     Search,
   },
-  setup() {},
 });
 </script>
-
-<style scoped>
-.error-msg {
-  color: red;
-}
-.router-link-active {
-  text-decoration: none;
-  color: white;
-}
-</style>
