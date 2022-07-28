@@ -1,6 +1,5 @@
 import { Handler } from "@netlify/functions";
 import dotenv from "dotenv";
-// import { JSDOM } from "jsdom";
 import fetch, { RequestInit } from "node-fetch";
 import {
   AuthorComment,
@@ -29,7 +28,7 @@ const getValidSteamId64 = async (
   const doesInputContainOnlyNumbers = !isNaN(+input);
 
   if (!doesInputContainOnlyNumbers) {
-    const vanityUrl = await getTypedApiResponse<SteamResolveVanityUrlReponse>(
+    const vanityUrl: SteamResolveVanityUrlReponse = await getTypedApiResponse(
       `https://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=${process.env.STEAM_API_KEY}&vanityurl=${input}`
     );
     return vanityUrl.response?.steamid ?? undefined;
@@ -45,13 +44,15 @@ const getValidSteamId64 = async (
  */
 const getProfileCommentsFromSteamId64 = async (
   steamId64: string | undefined
-): Promise<AuthorComment[] | null> => {
-  // kennyS steamID64: 76561198024905796
-  // my steamId: 76561198085973818
+): Promise<AuthorComment[]> => {
+  if (!steamId64) {
+    return [];
+  }
+
   // limit at 1000 for now
   const url = `https://steamcommunity.com/comment/Profile/render/${steamId64}/-1/?start=0&count=1000`;
 
-  const steamCommentData = await getTypedApiResponse<SteamCommentData>(url, {
+  const steamCommentData: SteamCommentData = await getTypedApiResponse(url, {
     headers: {
       Origin: "https://steamcommunity.com",
       Host: "steamcommunity.com",
@@ -67,7 +68,7 @@ const getProfileCommentsFromSteamId64 = async (
     "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/avatars/48/4888d158c81bc8f1d7644321d9eb78b0048a9bda_medium.jpg";
 
   if (steamCommentData.total_count === 0) {
-    return null;
+    return [];
   } else {
     $(".commentthread_comment").each((_, el) => {
       const author = $(el).find(".commentthread_comment_author");
@@ -91,6 +92,7 @@ const getProfileCommentsFromSteamId64 = async (
       });
     });
   }
+
   return profileComments;
 };
 
