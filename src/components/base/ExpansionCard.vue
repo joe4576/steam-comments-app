@@ -1,6 +1,6 @@
 <template>
-  <v-expansion-panels focusable>
-    <v-expansion-panel v-bind="$attrs">
+  <v-expansion-panels focusable :value="expand">
+    <v-expansion-panel>
       <v-expansion-panel-header>{{ title }}</v-expansion-panel-header>
       <v-expansion-panel-content>
         <slot />
@@ -24,10 +24,16 @@ export default defineComponent({
       required: false,
       default: "Filter Expansion Card",
     },
+    defaultExpanded: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
   },
   setup(props, context) {
     return {
       hasControlsSlot: computed(() => !!context.slots.controls),
+      expand: computed(() => (props.defaultExpanded ? 0 : -1)),
     };
   },
 });

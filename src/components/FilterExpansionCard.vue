@@ -4,20 +4,20 @@
       <v-container>
         <v-form ref="form">
           <v-text-field
-            v-model="steamUrl"
-            @keyup.enter="$emit('steamUrlResult', steamUrl)"
+            v-model="filterValues.url"
+            @keyup.enter="submit"
             label="Filter by Steam URL"
             clearable
           />
           <v-text-field
-            v-model="steamName"
-            @keyup.enter="$emit('steamNameResult', steamName)"
+            v-model="filterValues.name"
+            @keyup.enter="submit"
             label="Filter by Steam Name"
             clearable
           />
           <v-text-field
-            v-model="comment"
-            @keyup.enter="$emit('commentResult', comment)"
+            v-model="filterValues.comment"
+            @keyup.enter="submit"
             label="Filter by Comment"
             clearable
           />
@@ -49,7 +49,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from "@vue/composition-api";
+import { defineComponent, PropType, ref, watch } from "@vue/composition-api";
 import ExpansionCard from "@/components/base/ExpansionCard.vue";
 
 interface FormInterface {
@@ -57,7 +57,13 @@ interface FormInterface {
 }
 
 export interface FilterExpansionCardInterface {
-  resetFormValues: (emitEvent?: boolean) => void;
+  resetFormValues: (resetQueryParams?: boolean) => void;
+}
+
+export interface QueryParameters {
+  url?: string;
+  name?: string;
+  comment?: string;
 }
 
 export default defineComponent({
@@ -65,39 +71,47 @@ export default defineComponent({
   components: {
     ExpansionCard,
   },
+  props: {
+    defaultFilterValues: {
+      type: Object as PropType<QueryParameters>,
+      required: false,
+      default: () => null,
+    },
+  },
   setup(props, context) {
     const steamUrl = ref("");
     const steamName = ref("");
     const comment = ref("");
     const form = ref<FormInterface | null>(null);
 
+    const filterValues = ref<QueryParameters>({});
+
+    watch(
+      () => props.defaultFilterValues,
+      () => {
+        if (props.defaultFilterValues) {
+          filterValues.value = props.defaultFilterValues;
+        }
+      },
+      { immediate: true }
+    );
+
     return {
       steamUrl,
       steamName,
       comment,
       form,
+      filterValues,
 
-      // Clear form values with the option of emitting a reset event.
-      resetFormValues: (emitEvent: boolean = false) => {
+      // Clear form values
+      resetFormValues: (resetQueryParams: boolean = false) => {
         form.value?.reset();
-        if (emitEvent) {
+        if (resetQueryParams) {
           context.emit("reset");
         }
       },
 
-      submit: () => {
-        if (steamUrl.value) {
-          context.emit("steamUrlResult", steamUrl.value);
-        }
-
-        if (steamName.value) {
-          context.emit("steamNameResult", steamName.value);
-        }
-
-        if (comment.value) {
-          context.emit("commentResult", comment.value);
-        }
-      },
+      submit: () => context.emit("filter", filterValues.value),
     };
   },
 });
