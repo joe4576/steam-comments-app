@@ -32,7 +32,7 @@
             sm="auto"
             :class="{ 'px-0': $vuetify.breakpoint.xsOnly }"
           >
-            <v-btn @click="resetFormValues(true)" block>Reset</v-btn>
+            <v-btn @click="resetFormValues()" block>Reset</v-btn>
           </v-col>
           <v-spacer />
           <v-col
@@ -49,7 +49,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from "@vue/composition-api";
+import { defineComponent, PropType, ref, watch } from "@vue/composition-api";
 import ExpansionCard from "@/components/base/ExpansionCard.vue";
 
 interface FormInterface {
@@ -57,7 +57,7 @@ interface FormInterface {
 }
 
 export interface FilterExpansionCardInterface {
-  resetFormValues: (emitEvent?: boolean) => void;
+  resetFormValues: () => void;
 }
 
 export interface QueryParameters {
@@ -71,6 +71,13 @@ export default defineComponent({
   components: {
     ExpansionCard,
   },
+  props: {
+    defaultFilterValues: {
+      type: Object as PropType<QueryParameters>,
+      required: false,
+      default: () => null,
+    },
+  },
   setup(props, context) {
     const steamUrl = ref("");
     const steamName = ref("");
@@ -79,6 +86,16 @@ export default defineComponent({
 
     const filterValues = ref<QueryParameters>({});
 
+    watch(
+      () => props.defaultFilterValues,
+      () => {
+        if (props.defaultFilterValues) {
+          filterValues.value = props.defaultFilterValues;
+        }
+      },
+      { immediate: true }
+    );
+
     return {
       steamUrl,
       steamName,
@@ -86,12 +103,10 @@ export default defineComponent({
       form,
       filterValues,
 
-      // Clear form values with the option of emitting a reset event.
-      resetFormValues: (emitEvent: boolean = false) => {
+      // Clear form values
+      resetFormValues: () => {
         form.value?.reset();
-        if (emitEvent) {
-          context.emit("reset");
-        }
+        context.emit("reset");
       },
 
       submit: () => context.emit("filter", filterValues.value),

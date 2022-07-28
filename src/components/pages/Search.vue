@@ -16,6 +16,7 @@
               title="Filter Results"
               ref="filterExpansionCard"
               :disabled="!allComments"
+              :default-filter-values="defaultQueryParams"
               @filter="filterCommentsToDisplay"
               @reset="reset()"
             />
@@ -133,6 +134,8 @@ export default defineComponent({
     const loading = ref(false);
     const errorMessages = ref<string[]>([]);
 
+    const defaultQueryParams = ref<QueryParameters | null>(null);
+
     const filterExpansionCard = ref<FilterExpansionCardInterface | null>(null);
 
     const { router, route } = useRouter();
@@ -141,13 +144,13 @@ export default defineComponent({
       errorMessages.value = [];
     };
 
-    // Get all comments, with the option of clearing query params. Defaults to false
-    // as this method gets called if the page is initially visited with an existing
-    // account query param. Query params will be cleared if the reset button is
-    // hit manually.
-    const getComments = async (clearQueryParams: boolean = false) => {
+    /**
+     * Gets all steam comments and clears any previous query params
+     */
+    const getComments = async () => {
       clearErrorMessages();
-      filterExpansionCard.value?.resetFormValues(clearQueryParams);
+      filterCommentsToDisplay(undefined, true);
+      filterExpansionCard.value?.resetFormValues();
 
       const trimmedInput = userInput.value?.trim() ?? "";
       if (!trimmedInput) {
@@ -251,6 +254,19 @@ export default defineComponent({
         userInput.value = route.value.query.account.toString();
         await getComments();
       }
+
+      const url = route.value.query.url?.toString();
+      const comment = route.value.query.comment?.toString();
+      const name = route.value.query.name?.toString();
+
+      if (url || comment || name) {
+        defaultQueryParams.value = {
+          url,
+          comment,
+          name,
+        };
+        await filterCommentsToDisplay(defaultQueryParams.value);
+      }
     });
 
     return {
@@ -283,6 +299,7 @@ export default defineComponent({
       }),
       apiErrorMessage: computed(() => errorStore.apiErrorMessage.value),
       filterCommentsToDisplay,
+      defaultQueryParams,
     };
   },
 });
