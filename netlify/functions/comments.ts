@@ -32,9 +32,9 @@ const getValidSteamId64 = async (
       `https://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=${process.env.STEAM_API_KEY}&vanityurl=${input}`
     );
     return vanityUrl.response?.steamid;
-  } else {
-    return input;
   }
+
+  return input;
 };
 
 /**
@@ -69,29 +69,29 @@ const getProfileCommentsFromSteamId64 = async (
 
   if (steamCommentData.total_count === 0) {
     return [];
-  } else {
-    $(".commentthread_comment").each((_, el) => {
-      const author = $(el).find(".commentthread_comment_author");
-      const authorUrl =
-        $(author).find(".commentthread_author_link").prop("href") ??
-        fallbackAuthorUrl;
-      const personaName = $(author).find("bdi").text().trim();
-      const authorComment = $(el)
-        .find(".commentthread_comment_text")
-        .text()
-        .trim();
-      const avatarSrc =
-        $(el).find(".commentthread_comment_avatar img").prop("src") ??
-        fallbackAvatarSrc;
-
-      profileComments.push({
-        authorComment,
-        authorUrl,
-        avatarSrc,
-        personaName,
-      });
-    });
   }
+
+  $(".commentthread_comment").each((_, el) => {
+    const author = $(el).find(".commentthread_comment_author");
+    const authorUrl =
+      $(author).find(".commentthread_author_link").prop("href") ??
+      fallbackAuthorUrl;
+    const personaName = $(author).find("bdi").text().trim();
+    const authorComment = $(el)
+      .find(".commentthread_comment_text")
+      .text()
+      .trim();
+    const avatarSrc =
+      $(el).find(".commentthread_comment_avatar img").prop("src") ??
+      fallbackAvatarSrc;
+
+    profileComments.push({
+      authorComment,
+      authorUrl,
+      avatarSrc,
+      personaName,
+    });
+  });
 
   return profileComments;
 };
