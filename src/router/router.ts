@@ -9,12 +9,6 @@ Vue.use(VueRouter);
 const routes: RouteConfig[] = [
   {
     path: "/",
-    component: App,
-    name: "home",
-    redirect: "/search",
-  },
-  {
-    path: "/search",
     component: Search,
     name: "search",
   },
