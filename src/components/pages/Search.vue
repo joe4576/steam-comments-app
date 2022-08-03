@@ -40,67 +40,39 @@
       </v-container>
 
       <!-- Number of comments found -->
-      <v-container v-if="allComments">
+      <v-container v-if="commentsToDisplay.length && !loading">
         <v-row>
           <v-col>
-            Found <b>{{ numberOfCommentsFound }}</b> comments.
+            Found <b>{{ commentsToDisplay.length }}</b> comments.
           </v-col>
         </v-row>
       </v-container>
 
-      <!-- Comment section-->
-      <v-container v-if="commentsToDisplay" class="mx-auto">
-        <v-row
-          v-for="(comment, index) in commentsToDisplay"
-          :key="index"
-          :style="{
-            'background-color': rowColor(index),
-          }"
-          dense
-          class="pa-2"
-          align="center"
-        >
-          <!-- Avatar -->
-          <v-col cols="auto" class="ml-1">
-            <v-row>
-              <v-col>
-                <a :href="comment.authorUrl" target="_blank">
-                  <img
-                    :src="comment.avatarSrc"
-                    style="margin-top: 5px"
-                    alt="Player avatar"
-                  />
-                </a>
-              </v-col>
-            </v-row>
-          </v-col>
-          <!-- Name -->
-          <v-col cols="8" sm="4" md="3" lg="2" class="ml-2">
-            <v-row>
-              <v-col sm="auto">
-                <p style="overflow-x: scroll" class="my-auto">
-                  {{ comment.personaName }}
-                </p>
-              </v-col>
-            </v-row>
-          </v-col>
-          <!-- Comment -->
-          <v-col cols="12" sm="6" md="6" lg="7" style="overflow-x: overlay">
-            {{ comment.authorComment }}
-          </v-col>
-        </v-row>
-      </v-container>
+      <!-- Comments table -->
+      <data-table
+        :items="commentsToDisplay"
+        :headers="tableHeaders"
+        :loading="loading"
+        :disable-sort="$vuetify.breakpoint.xsOnly"
+        :mobile-breakpoint="-1"
+      >
+        <template #avatarSrc="{ item }">
+          <a :href="item.authorUrl" target="_blank">
+            <v-img
+              :src="item.avatarSrc"
+              max-height="30px"
+              max-width="30px"
+              alt="Player avatar"
+            />
+          </a>
+        </template>
+        <template #personaName="{ item }">
+          <p class="my-auto" style="overflow-wrap: break-word">
+            {{ item.personaName }}
+          </p>
+        </template>
+      </data-table>
     </v-container>
-
-    <!-- Dialogs -->
-    <v-dialog v-model="loading" hide-overlay persistent width="300">
-      <v-card color="primary" dark>
-        <v-card-text>
-          Fetching comments...
-          <v-progress-linear indeterminate color="white" class="mb-0" />
-        </v-card-text>
-      </v-card>
-    </v-dialog>
   </div>
 </template>
 
@@ -121,17 +93,19 @@ import { useRouter } from "@/router/router";
 import isEqual from "lodash.isequal";
 import { AuthorComment } from "@/types/types";
 import SearchCard from "@/components/SearchCard.vue";
+import DataTable, { TypedDataTableHeader } from "@/components/DataTable.vue";
 
 export default defineComponent({
   name: "Search",
   components: {
     FilterExpansionCard,
     SearchCard,
+    DataTable,
   },
   setup() {
     const userInput = ref<string>("");
     const allComments = ref<AuthorComment[]>([]);
-    const commentsToDisplay = ref<AuthorComment[] | null>(null);
+    const commentsToDisplay = ref<AuthorComment[]>([]);
     const loading = ref(false);
     const errorMessages = ref<string[]>([]);
 
@@ -271,6 +245,24 @@ export default defineComponent({
       }
     });
 
+    const tableHeaders: TypedDataTableHeader<AuthorComment>[] = [
+      {
+        text: "Avatar",
+        value: "avatarSrc",
+        width: "10%",
+      },
+      {
+        text: "Name",
+        value: "personaName",
+        width: "25%",
+      },
+      {
+        text: "Comment",
+        value: "authorComment",
+        width: "50%",
+      },
+    ];
+
     return {
       getComments,
       userInput,
@@ -290,19 +282,11 @@ export default defineComponent({
         filterCommentsToDisplay(undefined, true);
       },
 
-      numberOfCommentsFound: computed(() => {
-        if (!commentsToDisplay.value && allComments.value) {
-          return allComments.value.length;
-        } else if (commentsToDisplay.value) {
-          return commentsToDisplay.value.length;
-        } else {
-          return -1;
-        }
-      }),
       apiErrorMessage: computed(() => errorStore.apiErrorMessage.value),
       filterCommentsToDisplay,
       defaultQueryParams,
       expandFilterCardByDefault,
+      tableHeaders,
     };
   },
 });
